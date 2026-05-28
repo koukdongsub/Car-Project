@@ -1,0 +1,11 @@
+{
+  "name": "car-parking-simulator",
+  "version": "1.0.0",
+  "description": "3D Car Parking Simulator Mobile Web Simulator",
+  "scripts": {
+    "start": "http-server app/src/main/assets -p 3000 -c-1"
+  },
+  "dependencies": {
+    "http-server": "^14.1.1"
+  }
+}

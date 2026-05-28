@@ -1,0 +1,864 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+
+body, html {
+    width: 100%;
+    height: 100%;
+    background-color: #1a1a2e;
+    color: #fff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden;
+    touch-action: none;
+}
+
+.screen {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* 스플래시 스크린 */
+#splash-screen {
+    background: radial-gradient(ellipse at 60% 35%, #0a2a4a 0%, #050f1a 50%, #000510 100%);
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    transition: opacity 0.8s ease;
+    overflow: hidden;
+}
+
+#splash-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(0,200,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,200,255,0.05) 1px, transparent 1px);
+    background-size: 50px 50px;
+    animation: gridMove 6s linear infinite;
+}
+
+#splash-screen::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 30%;
+    background: linear-gradient(to top, rgba(0,180,255,0.06) 0%, transparent 100%);
+}
+
+@keyframes gridMove {
+    0%   { transform: translateY(0); }
+    100% { transform: translateY(50px); }
+}
+
+/* 파티클 */
+.splash-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+.splash-particles span {
+    position: absolute;
+    display: block;
+    width: 3px; height: 3px;
+    border-radius: 50%;
+    background: #00eeff;
+    box-shadow: 0 0 6px #00eeff;
+    animation: particleFloat 4s ease-in-out infinite;
+}
+.splash-particles span:nth-child(1) { left:10%; top:20%; animation-delay:0s;   animation-duration:3.5s; }
+.splash-particles span:nth-child(2) { left:25%; top:65%; animation-delay:0.5s; animation-duration:4s; }
+.splash-particles span:nth-child(3) { left:42%; top:15%; animation-delay:1s;   animation-duration:3s; }
+.splash-particles span:nth-child(4) { left:60%; top:72%; animation-delay:0.2s; animation-duration:4.5s; }
+.splash-particles span:nth-child(5) { left:75%; top:30%; animation-delay:0.8s; animation-duration:3.8s; }
+.splash-particles span:nth-child(6) { left:85%; top:55%; animation-delay:1.2s; animation-duration:3.2s; }
+.splash-particles span:nth-child(7) { left:50%; top:82%; animation-delay:0.3s; animation-duration:4.2s; }
+.splash-particles span:nth-child(8) { left:90%; top:12%; animation-delay:0.7s; animation-duration:3.6s; width:2px; height:2px; }
+
+@keyframes particleFloat {
+    0%,100% { transform:translateY(0) scale(1);   opacity:0.4; }
+    50%      { transform:translateY(-20px) scale(1.4); opacity:1; }
+}
+
+.logo-container {
+    text-align: center;
+    opacity: 0;
+    animation: customSplash 4s ease-in-out 0.5s forwards;
+    position: relative;
+    z-index: 1;
+    padding: 20px;
+}
+
+.car-icon {
+    width: 290px;
+    height: 145px;
+    margin-bottom: 18px;
+    filter: drop-shadow(0 0 18px rgba(0,200,255,0.6)) drop-shadow(0 0 40px rgba(0,100,200,0.3));
+    animation: carFloat 3s ease-in-out 0.5s infinite;
+}
+
+@keyframes carFloat {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-7px); }
+}
+
+.splash-title-wrap { margin-top: 6px; }
+
+.logo-text {
+    font-size: 2.8rem;
+    font-weight: 900;
+    letter-spacing: 8px;
+    background: linear-gradient(135deg, #ffffff 0%, #00eeff 45%, #0088cc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 12px rgba(0,238,255,0.7));
+    animation: textPulse 2s ease-in-out 0.5s infinite;
+}
+
+.logo-tagline {
+    font-size: 0.72rem;
+    letter-spacing: 4px;
+    color: rgba(0,200,255,0.55);
+    margin-top: 10px;
+    font-weight: 300;
+}
+
+@keyframes textPulse {
+    0%,100% { filter: drop-shadow(0 0 10px rgba(0,238,255,0.5)); }
+    50%      { filter: drop-shadow(0 0 25px rgba(0,238,255,0.95)); }
+}
+
+@keyframes customSplash {
+    0%   { opacity:0; transform:scale(0.85) translateY(20px); }
+    15%  { opacity:1; transform:scale(1) translateY(0); }
+    80%  { opacity:1; transform:scale(1) translateY(0); }
+    100% { opacity:0; transform:scale(1.05) translateY(-10px); }
+}
+
+
+/* 메인 메뉴 (주차장 배경) */
+#main-menu {
+    justify-content: flex-start;
+    align-items: center;
+    background: #080a10;
+    background-image: 
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 30px 30px;
+    position: relative;
+    perspective: 1000px;
+    padding-top: 5vh;
+}
+
+#main-menu::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at center, transparent 30%, #000 100%);
+    pointer-events: none;
+}
+
+.main-title {
+    font-size: 3.2rem;
+    font-weight: 900;
+    color: #ffffff;
+    text-shadow: 0 0 5px #fff, 0 0 15px #00ffff, 0 0 30px #00ffff;
+    margin-bottom: 15px;
+    text-align: center;
+    letter-spacing: 6px;
+    z-index: 2;
+    animation: neonBreathe 2.5s ease-in-out infinite alternate;
+}
+
+/* 차량 선택 화면 */
+#vehicle-selection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    z-index: 2;
+    transition: opacity 0.5s ease;
+}
+
+.selection-title {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.3rem;
+    letter-spacing: 5px;
+    margin-bottom: 25px;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+    animation: simpleBreathe 2.5s ease-in-out infinite alternate;
+    z-index: 2;
+}
+
+@keyframes neonBreathe {
+    0% {
+        transform: scale(1);
+        text-shadow: 0 0 5px #fff, 0 0 10px #00ffff, 0 0 20px #00ffff;
+    }
+    100% {
+        transform: scale(1.03);
+        text-shadow: 0 0 8px #fff, 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 60px #0088ff;
+    }
+}
+
+@keyframes simpleBreathe {
+    0% {
+        transform: scale(1);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(1.02);
+        opacity: 1;
+        text-shadow: 0 0 12px rgba(0, 255, 255, 0.6);
+    }
+}
+
+.parking-lot {
+    display: flex;
+    gap: 30px;
+    padding: 20px;
+}
+
+/* 스마트폰 세로 모드 대응 */
+@media (max-width: 600px) and (orientation: portrait) {
+    .parking-lot {
+        flex-direction: column;
+        gap: 20px;
+        align-items: center;
+    }
+    .parking-spot {
+        width: 220px !important;
+        height: 120px !important;
+        flex-direction: row !important;
+        justify-content: flex-start;
+        padding-left: 20px;
+    }
+    .spot-lines {
+        border: 3px solid rgba(255, 200, 0, 0.3) !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-top: 3px solid rgba(255, 200, 0, 0.3) !important;
+        border-bottom: 3px solid rgba(255, 200, 0, 0.3) !important;
+    }
+    .car-model {
+        transform: rotate(-90deg) !important;
+        margin-top: 0 !important;
+        margin-left: 20px !important;
+    }
+    .spot-label {
+        bottom: auto !important;
+        right: -40px !important;
+        transform: rotate(90deg);
+    }
+    .v-info {
+        bottom: auto !important;
+        left: 20px !important;
+        transform: translateY(0) !important;
+        opacity: 1 !important;
+        background: transparent !important;
+        border: none !important;
+        position: static !important;
+        pointer-events: auto !important;
+        text-align: left !important;
+        margin-left: 25px !important; /* 차량 그래픽과 텍스트 사이 간격 확보 */
+    }
+    .parking-spot:hover .car-model {
+        transform: rotate(-90deg) translateX(10px) scale(1.05) !important;
+    }
+}
+
+.parking-spot {
+    position: relative;
+    width: 120px;
+    height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.spot-lines {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border: 3px solid rgba(255, 200, 0, 0.3);
+    border-top: none;
+    border-bottom: none;
+    transition: all 0.3s;
+}
+.parking-spot:hover .spot-lines {
+    border-color: rgba(0, 255, 255, 0.8);
+    box-shadow: inset 2px 0 10px rgba(0,255,255,0.2), inset -2px 0 10px rgba(0,255,255,0.2);
+}
+
+.spot-label {
+    position: absolute;
+    bottom: -30px;
+    color: rgba(255,255,255,0.3);
+    font-family: monospace;
+    font-size: 1.2rem;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+.parking-spot:hover .spot-label { color: #0ff; text-shadow: 0 0 8px #0ff; }
+
+.car-model {
+    width: 80px;
+    height: 160px;
+    margin-top: 10px;
+    filter: drop-shadow(0 15px 15px rgba(0,0,0,0.8));
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 2;
+}
+.parking-spot:hover .car-model {
+    transform: translateY(-10px) scale(1.05);
+}
+
+.parking-spot:hover svg circle[fill="#e0f7fa"], 
+.parking-spot:hover svg circle[fill="#0ff"],
+.parking-spot:hover svg rect[fill="#fff"] {
+    filter: drop-shadow(0 -15px 15px rgba(255,255,255,0.8)) !important;
+}
+
+.v-info {
+    position: absolute;
+    bottom: 30px;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    background: rgba(0,0,0,0.8);
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(0,255,255,0.4);
+    width: 140px;
+    pointer-events: none;
+    z-index: 3;
+}
+.parking-spot:hover .v-info {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.v-name {
+    color: #0ff;
+    font-weight: 900;
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+}
+
+.v-desc {
+    color: #aaa;
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+}
+
+/* 난이도 선택 화면 (Glassmorphism) */
+#difficulty-selection {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.glass-modal {
+    background: rgba(15, 25, 40, 0.7);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.1), inset 0 0 20px rgba(0, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 40px;
+    width: 90%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: modalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes modalPop {
+    from { opacity: 0; transform: scale(0.9) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+#selected-vehicle-text {
+    color: #0ff;
+    font-size: 0.9rem;
+    letter-spacing: 3px;
+    margin-bottom: 5px;
+}
+
+.modal-title {
+    color: #fff;
+    font-size: 1.8rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.difficulty-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    margin-bottom: 30px;
+}
+
+.menu-btn {
+    position: relative;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 15px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.menu-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 4px;
+    background: #555;
+    transition: all 0.3s;
+}
+
+.menu-btn.free::before { background: #00f2fe; }
+.menu-btn.easy::before { background: #4CAF50; }
+.menu-btn.medium::before { background: #FFC107; }
+.menu-btn.difficult::before { background: #F44336; }
+
+.menu-btn:hover {
+    background: rgba(255,255,255,0.05);
+    transform: translateX(5px);
+    border-color: rgba(255,255,255,0.3);
+}
+
+.menu-btn:hover::before { width: 100%; opacity: 0.1; }
+
+.btn-text {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    position: relative;
+    z-index: 2;
+}
+
+.btn-desc {
+    color: #888;
+    font-size: 0.75rem;
+    position: relative;
+    z-index: 2;
+}
+
+.back-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.5);
+    font-size: 0.9rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.3s;
+}
+
+.back-btn:hover { color: #fff; }
+
+/* 게임 화면 */
+#game-hud {
+    position: absolute;
+    top: 20px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    z-index: 10;
+    pointer-events: none;
+}
+
+#timer-box {
+    padding: 10px 20px;
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid #0ff;
+    border-radius: 15px;
+    color: #0ff;
+    font-size: 1.5rem;
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+#minimap {
+    position: absolute;
+    top: 80px; /* 타이머 박스와 겹치지 않게 밑으로 내림 */
+    right: 20px;
+    width: 120px;
+    height: 120px;
+    background: rgba(0, 20, 20, 0.85);
+    border: 2px solid rgba(0, 255, 255, 0.6);
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.3), inset 0 0 10px rgba(0, 255, 255, 0.1);
+    z-index: 20;
+    pointer-events: none; /* 클릭 방지 */
+}
+
+#canvas-container {
+    flex: 1; /* 상단 75% */
+    position: relative;
+    width: 100%;
+    background-color: #000;
+    overflow: hidden;
+}
+
+#game-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
+}
+
+#result-message {
+    font-size: 2.5rem;
+    margin-bottom: 30px;
+    text-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+#btn-main-menu {
+    background: linear-gradient(135deg, #ff0055 0%, #ff00aa 100%);
+    border: 2px solid #fff;
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: 900;
+    padding: 15px 40px;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 10px 30px rgba(255, 0, 85, 0.5), inset 0 0 10px rgba(255,255,255,0.5);
+    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    letter-spacing: 2px;
+}
+
+#btn-main-menu:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 15px 40px rgba(255, 0, 170, 0.8), inset 0 0 15px rgba(255,255,255,0.8);
+}
+
+#btn-main-menu:active {
+    transform: translateY(2px) scale(0.95);
+    box-shadow: 0 5px 15px rgba(255, 0, 85, 0.5);
+}
+
+/* 하단 컨트롤러 */
+#controller-container {
+    height: 25%;
+    min-height: 180px;
+    background: #111;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px; /* 좌우 여백 축소 */
+    border-top: 2px solid #333;
+}
+
+/* 세로 모드(Portrait)에서의 전진/후진 버튼 스타일 */
+@media (orientation: portrait) {
+    #gear-selector {
+        display: flex !important;
+        position: absolute !important;
+        bottom: calc(25% + 20px); /* 하단 컨트롤러 바로 위에 플로팅 */
+        right: 20px !important;
+        flex-direction: row !important;
+        background: rgba(15, 15, 25, 0.85);
+        backdrop-filter: blur(5px);
+        padding: 8px !important;
+        border-radius: 30px !important;
+        border: 2px solid rgba(0, 255, 255, 0.4) !important;
+        gap: 10px !important;
+        z-index: 25 !important;
+        box-shadow: 0 4px 20px rgba(0, 255, 255, 0.3);
+        pointer-events: auto !important;
+    }
+
+    .gear-btn {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 1.2rem !important;
+        font-weight: 800 !important;
+        border-radius: 50% !important;
+        border: 2px solid #555 !important;
+        color: #bbb !important;
+        background: #222233 !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+    }
+
+    /* 전진(D) 활성화 시 녹색 글로우 */
+    .gear-btn.active:first-child {
+        background: #1b4d3e !important;
+        border-color: #00ff88 !important;
+        color: #00ff88 !important;
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.6) !important;
+    }
+
+    /* 후진(R) 활성화 시 적색 글로우 */
+    .gear-btn.active:last-child {
+        background: #6b2d2d !important;
+        border-color: #ff3b30 !important;
+        color: #ff3b30 !important;
+        box-shadow: 0 0 15px rgba(255, 59, 48, 0.6) !important;
+    }
+}
+
+/* --- 가로 모드 (Landscape) 전용 레이아웃 --- */
+@media (orientation: landscape) {
+    #controller-container {
+        height: 100% !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        display: block !important;
+        pointer-events: none !important;
+        z-index: 30;
+    }
+
+    /* 1. 핸들: 왼쪽 아래 (크기 축소) */
+    .steering-wheel-container {
+        position: absolute !important;
+        bottom: 20px !important;
+        left: 30px !important;
+        width: 140px !important;
+        height: 140px !important;
+        pointer-events: auto !important;
+    }
+
+    #steering-wheel {
+        width: 120px !important;
+        height: 120px !important;
+        border-width: 12px !important;
+    }
+
+    /* 2. 미니맵: 오른쪽 위 (크기 축소 및 원형 디자인) */
+    #minimap {
+        position: absolute !important;
+        top: 15px !important;
+        right: 15px !important;
+        width: 100px !important;
+        height: 100px !important;
+        border: 2px solid rgba(0, 255, 255, 0.6) !important;
+        background: rgba(0, 10, 10, 0.7) !important;
+        border-radius: 50% !important;
+        display: block !important;
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.3) !important;
+    }
+
+    /* 타이머 박스 (크기 축소) */
+    #timer-box {
+        position: absolute !important;
+        top: 15px !important;
+        left: 15px !important;
+        background: rgba(0, 0, 0, 0.6) !important;
+        padding: 5px 15px !important;
+        font-size: 1.1rem !important;
+    }
+
+    /* 3. 조작부: 오른쪽 아래 (컴팩트 배치) */
+    
+    #gear-selector {
+        display: flex !important;
+        position: absolute !important;
+        bottom: 20px !important;
+        right: 20px !important;
+        flex-direction: column !important;
+        background: rgba(0, 0, 0, 0.7) !important;
+        padding: 5px !important;
+        border-radius: 10px !important;
+        border: 1px solid #444 !important;
+        gap: 5px !important;
+        pointer-events: auto !important;
+    }
+
+    .gear-btn {
+        width: 35px !important;
+        height: 35px !important;
+        font-size: 0.9rem !important;
+    }
+
+    .pedal-controls {
+        display: flex !important;
+        position: absolute !important;
+        bottom: 20px !important;
+        right: 85px !important; 
+        flex-direction: row !important;
+        align-items: flex-end !important;
+        gap: 15px !important;
+        pointer-events: auto !important;
+    }
+
+    .brake-btn {
+        width: 80px !important;
+        height: 55px !important;
+        font-size: 0.8rem !important;
+        background: #444 !important;
+        border: 3px solid #666 !important;
+    }
+
+    .gas-btn {
+        width: 50px !important;
+        height: 110px !important;
+        font-size: 0.8rem !important;
+        background: #222 !important;
+        border: 2px solid #444 !important;
+    }
+
+    #game-hud {
+        display: contents !important;
+    }
+}
+
+.steering-wheel-container {
+    width: 140px;
+    height: 140px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#steering-wheel {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 15px solid #333;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 5px 15px rgba(0,0,0,0.5);
+    position: relative;
+    transform-origin: center;
+    transition: transform 0.1s ease-out; /* 복원력을 위한 트랜지션 */
+    background: radial-gradient(circle, rgba(40,40,40,1) 0%, rgba(20,20,20,1) 100%);
+    touch-action: none; /* 스크롤 방지 */
+}
+
+.wheel-center {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #111;
+    border: 2px solid #555;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 5px rgba(0,0,0,0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.wheel-center::after {
+    content: "C"; /* 로고 (Car) */
+    color: #888;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.wheel-spoke {
+    position: absolute;
+    background: #222;
+    border: 1px solid #444;
+}
+.wheel-spoke.left {
+    width: 35px; height: 20px;
+    top: 50%; left: 0;
+    transform: translateY(-50%);
+}
+.wheel-spoke.right {
+    width: 35px; height: 20px;
+    top: 50%; right: 0;
+    transform: translateY(-50%);
+}
+.wheel-spoke.bottom {
+    width: 25px; height: 35px;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+}
+
+.pedal-controls {
+    display: flex;
+    gap: 8px;
+    height: 60%;
+    flex: 1;
+    justify-content: flex-end;
+    margin-left: 10px;
+}
+
+.ctrl-btn {
+    background: rgba(40, 40, 50, 0.8);
+    border: 2px solid #555;
+    color: #ccc;
+    border-radius: 12px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    outline: none;
+    box-shadow: 0 5px 10px rgba(0,0,0,0.5);
+    transition: all 0.1s;
+}
+
+.ctrl-btn.active {
+    background: #334;
+    border-color: #88a;
+    transform: translateY(3px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.brake-btn { width: auto; flex: 1; max-width: 95px; height: 100%; border-bottom: 5px solid #a33; font-size: 0.85rem; padding: 0 5px; }
+.brake-btn.active { border-bottom-width: 2px; }
+
+.gas-btn { width: auto; flex: 1; max-width: 95px; height: 100%; border-bottom: 5px solid #3a3; font-size: 0.85rem; padding: 0 5px; }
+.gas-btn.active { border-bottom-width: 2px; }
