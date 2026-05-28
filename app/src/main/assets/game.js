@@ -106,6 +106,10 @@ let carPhysics = { x: 0, z: 0, speed: 0, angle: 0 };
 let walls = [];
 let parkingSpot = { x: 0, z: 0, w: 3.5, l: 6.0 };
 
+// NPC 상태
+let npcCars = [];
+let playerBox = null;
+
 // 컨트롤 및 기어 상태 (D/R 단순화)
 const controls = { gas: false, brake: false, left: false, right: false };
 let currentGear = 'D'; // D (Drive), R (Reverse)
@@ -259,6 +263,31 @@ function buildMap(difficulty) {
         backLine.position = new BABYLON.Vector3(parkingSpot.x, 0.03, parkingSpot.z - parkingSpot.l / 2);
         backLine.material = lineMat;
 
+        // --- NEW: 스토퍼 추가 ---
+        const stopperMat = new BABYLON.StandardMaterial("stopperMat", scene);
+        stopperMat.diffuseColor = new BABYLON.Color3(0.8, 0.8, 0.1);
+        const stopper = BABYLON.MeshBuilder.CreateBox("stopper", { width: parkingSpot.w - 0.8, height: 0.15, depth: 0.3 }, scene);
+        stopper.position = new BABYLON.Vector3(parkingSpot.x, 0.075, parkingSpot.z - parkingSpot.l / 2 + 0.6);
+        stopper.material = stopperMat;
+        walls.push({ x: parkingSpot.x - (parkingSpot.w - 0.8)/2, z: stopper.position.z - 0.15, w: parkingSpot.w - 0.8, l: 0.3 });
+        
+        // --- NEW: 바닥 화살표 페인트 ---
+        const arrowMat = new BABYLON.StandardMaterial("arrowMat", scene);
+        arrowMat.diffuseColor = new BABYLON.Color3(1, 1, 1);
+        arrowMat.emissiveColor = new BABYLON.Color3(0.5, 0.5, 0.5);
+        arrowMat.alpha = 0.5;
+        
+        const arrowBody = BABYLON.MeshBuilder.CreatePlane("arrowBody", { width: 1.2, height: 5 }, scene);
+        arrowBody.rotation.x = Math.PI / 2;
+        arrowBody.position = new BABYLON.Vector3(parkingSpot.x, 0.025, parkingSpot.z + 10);
+        arrowBody.material = arrowMat;
+        
+        const arrowHead = BABYLON.MeshBuilder.CreateDisc("arrowHead", { radius: 1.8, tessellation: 3 }, scene);
+        arrowHead.rotation.x = Math.PI / 2;
+        arrowHead.rotation.y = -Math.PI / 2;
+        arrowHead.position = new BABYLON.Vector3(parkingSpot.x, 0.025, parkingSpot.z + 6.6); // 10 - 5/2 - 1.8/2 approx
+        arrowHead.material = arrowMat;
+
         // 3. 코너 마커 (네 모서리의 입체 기둥)
         const markerMat = new BABYLON.StandardMaterial("markerMat", scene);
         markerMat.diffuseColor = new BABYLON.Color3(0, 1, 1);
@@ -294,6 +323,12 @@ let frontWheelGroups = [];
 function createCar() {
     const v = currentVehicle;
     carGroup = new BABYLON.TransformNode("carGroup", scene);
+
+    // NEW: 플레이어 바운딩 박스
+    playerBox = BABYLON.MeshBuilder.CreateBox("playerBox", { width: v.w, height: v.h, depth: v.l }, scene);
+    playerBox.parent = carGroup;
+    playerBox.position.y = v.h / 2;
+    playerBox.visibility = 0; // 보이지 않지만 충돌 연산에는 포함됨
 
     // 모델 경로 매핑 (Kenney GLB format 디렉터리)
     let modelFile = "";
@@ -481,6 +516,111 @@ function updatePhysics() {
     }
 }
 
+function createNPCs(difficulty) {
+    npcCars = [];
+    if (difficulty === 'FREE') return;
+    
+    // 난이도별 NPC 설정 (플레이어 주변, 주차 공간 위주의 순찰 경로)
+    let npcConfigs = [];
+    if (difficulty === 'EASY') {
+        // EASY: 주차 공간(0, -30) 우측 및 앞쪽을 맴도는 사각형 궤도 (벽 x:-10, z:-10~-20 회피)
+        npcConfigs.push({ x: 15, z: -15, speed: 0.1, path: [{x: 15, z: -15}, {x: 15, z: -45}, {x: -5, z: -45}, {x: -5, z: -15}], pathIdx: 0, color: {r: 1, g: 1, b: 0} });
+    } else if (difficulty === 'MEDIUM') {
+        // MEDIUM 1: 중앙 거대 벽(x:0, z:-15, w:40)을 완벽하게 빙글빙글 도는 궤도
+        npcConfigs.push({ x: -25, z: -10, speed: 0.15, path: [{x: -25, z: -10}, {x: 25, z: -10}, {x: 25, z: -20}, {x: -25, z: -20}], pathIdx: 0, color: {r: 0, g: 1, b: 0} });
+        // MEDIUM 2: 주차 공간(20, -30) 바로 앞(z:-25)에서 좌우로 진로를 방해
+        npcConfigs.push({ x: 5, z: -25, speed: 0.12, path: [{x: 5, z: -25}, {x: 35, z: -25}], pathIdx: 0, color: {r: 1, g: 0.5, b: 0} });
+    } else if (difficulty === 'DIFFICULT') {
+        // DIFFICULT 1: 플레이어 시작 지점(0, 10) 바로 앞(z=5)을 가로지르며 긴장감 유발
+        npcConfigs.push({ x: -35, z: 5, speed: 0.2, path: [{x: -35, z: 5}, {x: 35, z: 5}], pathIdx: 0, color: {r: 1, g: 0, b: 0} });
+        // DIFFICULT 2: 우측의 좁은 틈새 통로(x=45)를 막아서며 위아래로 빠르게 순찰
+        npcConfigs.push({ x: 45, z: 15, speed: 0.18, path: [{x: 45, z: 15}, {x: 45, z: -15}], pathIdx: 0, color: {r: 0.8, g: 0, b: 0.8} });
+        // DIFFICULT 3: 주차 공간(40, -40) 앞쪽 공터를 넓게 맴돌며 주차를 방해
+        npcConfigs.push({ x: 15, z: -25, speed: 0.25, path: [{x: 15, z: -25}, {x: 45, z: -25}, {x: 45, z: -35}, {x: 15, z: -35}], pathIdx: 0, color: {r: 0, g: 0, b: 1} });
+    }
+
+    const modelFile = "kenney_car-kit/Models/GLB%20format/suv.glb";
+    const lastSlash = modelFile.lastIndexOf('/');
+    const rootUrl = modelFile.substring(0, lastSlash + 1);
+    const fileName = modelFile.substring(lastSlash + 1);
+
+    npcConfigs.forEach((config, index) => {
+        const npcNode = new BABYLON.TransformNode("npc_" + index, scene);
+        npcNode.position = new BABYLON.Vector3(config.x, 0, config.z);
+        
+        // 투명 바운딩 박스
+        const box = BABYLON.MeshBuilder.CreateBox("npcBox_" + index, { width: 2.2, height: 1.5, depth: 4.8 }, scene);
+        box.parent = npcNode;
+        box.position.y = 0.75;
+        box.visibility = 0; // 게임 상에서는 보이지 않음
+        
+        BABYLON.SceneLoader.ImportMeshAsync("", rootUrl, fileName, scene).then(result => {
+            const root = result.meshes[0];
+            root.parent = npcNode;
+            root.scaling = new BABYLON.Vector3(2.25, 2.25, 2.25);
+            
+            // 색상 변경
+            result.meshes.forEach(m => {
+                if (m.material && m.material.albedoColor) {
+                    m.material = m.material.clone("npcMat_" + m.name);
+                    m.material.backFaceCulling = false;
+                    m.material.usePhysicalLightFalloff = false;
+                    const r = m.material.albedoColor.r;
+                    const g = m.material.albedoColor.g;
+                    const b = m.material.albedoColor.b;
+                    // 타이어나 유리가 아닌 부분(주로 밝은 색)의 색상을 변경
+                    if (r > 0.3 || g > 0.3 || b > 0.3) {
+                        m.material.albedoColor = new BABYLON.Color3(config.color.r, config.color.g, config.color.b);
+                    }
+                }
+            });
+        });
+        
+        npcCars.push({
+            node: npcNode,
+            box: box,
+            config: config,
+            angle: 0
+        });
+    });
+}
+
+function updateNPCs() {
+    if (isGameOver) return;
+    npcCars.forEach(npc => {
+        const c = npc.config;
+        const target = c.path[c.pathIdx];
+        
+        const dx = target.x - npc.node.position.x;
+        const dz = target.z - npc.node.position.z;
+        const dist = Math.hypot(dx, dz);
+        
+        if (dist < 0.5) {
+            c.pathIdx = (c.pathIdx + 1) % c.path.length;
+        } else {
+            // 회전 보간
+            let targetAngle = Math.atan2(dx, dz);
+            let angleDiff = targetAngle - npc.angle;
+            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+            npc.angle += angleDiff * 0.1;
+            
+            npc.node.rotation.y = npc.angle;
+            
+            // 이동
+            npc.node.position.x += Math.sin(npc.angle) * c.speed;
+            npc.node.position.z += Math.cos(npc.angle) * c.speed;
+            
+            // 바퀴 회전
+            npc.node.getChildMeshes().forEach(m => {
+                if (m.name.toLowerCase().includes("wheel")) {
+                    m.rotation.x -= c.speed / 0.4;
+                }
+            });
+        }
+    });
+}
+
 /**
  * 충돌 감지
  */
@@ -492,6 +632,22 @@ function checkCollisions() {
                corner.z > wall.z && corner.z < wall.z + wall.l) {
                 gameOver(false, "CRASHED!");
                 return;
+            }
+        }
+    }
+    
+    // NPC 충돌 감지 (정밀한 바운딩 박스 검사)
+    if (playerBox && carGroup) {
+        carGroup.computeWorldMatrix(true);
+        playerBox.computeWorldMatrix(true);
+        for (let npc of npcCars) {
+            if (npc.box && npc.node) {
+                npc.node.computeWorldMatrix(true);
+                npc.box.computeWorldMatrix(true);
+                if (playerBox.intersectsMesh(npc.box, true)) {
+                    gameOver(false, "CRASHED INTO A CAR!");
+                    return;
+                }
             }
         }
     }
@@ -540,6 +696,7 @@ function launchGameUI(difficulty) {
     initBabylon();
     buildMap(difficulty);
     createCar();
+    createNPCs(difficulty);
     bindControls();
     
     timerValue = (difficulty === 'FREE') ? 0 : 45;
@@ -561,6 +718,7 @@ function launchGameUI(difficulty) {
     engine.runRenderLoop(() => {
         if(!isGameOver) {
             updatePhysics();
+            updateNPCs();
             updateCamera();
             drawMinimap();
             scene.render();

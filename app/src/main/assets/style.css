@@ -558,7 +558,8 @@ body, html {
 
 #result-message {
     font-size: 2.5rem;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
+    text-align: center;
     text-shadow: 0 5px 15px rgba(0,0,0,0.5);
 }
 
