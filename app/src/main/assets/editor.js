@@ -7,7 +7,8 @@ let placedObjects = [];
 let currentDifficulty = null;
 let isDeleteMode = false;
 let isEditMode = false;
-let selectedObjects = []; // 다중 선택을 위해 배열로 변경
+let isWallMode = false;
+let selectedObjects = [];
 let adjustInterval = null;
 
 let startPointMesh, endPointMesh;
@@ -16,7 +17,6 @@ let endPos = { x: 0, z: -30 };
 
 const keys = { w: false, a: false, s: false, d: false };
 
-// [핵심] 도로 간격을 없애기 위해 스케일을 8.1로 조정 (1x1 에셋을 8단위 그리드에 딱 맞게)
 const BASE_SCALE = 8.1;  
 const SNAP_UNIT = 8;     
 
@@ -84,13 +84,18 @@ window.selectDifficulty = (diff) => {
 window.toggleEditMode = () => {
     isEditMode = !isEditMode;
     isDeleteMode = false;
+    isWallMode = false;
     selectedRoadType = null;
     document.querySelectorAll(".road-item").forEach(i => i.classList.remove("selected"));
     
     const btn = document.getElementById("btn-edit");
     const dBtn = document.getElementById("btn-delete");
+    const wBtn = document.getElementById("btn-wall");
+    
     dBtn.classList.remove("active");
     dBtn.innerText = "🗑️ 삭제 모드 OFF";
+    wBtn.innerText = "🧱 투명벽 배치";
+    wBtn.style.boxShadow = "none";
 
     if (isEditMode) {
         btn.classList.add("active");
@@ -104,6 +109,44 @@ window.toggleEditMode = () => {
         btn.style.color = "black";
         btn.innerText = "✏️ 편집 모드 OFF";
         deselectAllObjects();
+    }
+};
+
+window.toggleWallMode = () => {
+    isWallMode = !isWallMode;
+    isEditMode = false;
+    isDeleteMode = false;
+    selectedRoadType = null;
+    document.querySelectorAll(".road-item").forEach(i => i.classList.remove("selected"));
+
+    const btn = document.getElementById("btn-wall");
+    const eBtn = document.getElementById("btn-edit");
+    const dBtn = document.getElementById("btn-delete");
+
+    eBtn.classList.remove("active");
+    eBtn.style.background = "#0ff";
+    eBtn.style.color = "black";
+    eBtn.innerText = "✏️ 편집 모드 OFF";
+    
+    dBtn.classList.remove("active");
+    dBtn.innerText = "🗑️ 삭제 모드 OFF";
+
+    if (isWallMode) {
+        btn.innerText = "🧱 투명벽 배치 중 (바닥 클릭)";
+        btn.style.boxShadow = "0 0 15px #ff5722";
+        if (ghostObject) ghostObject.dispose();
+        
+        ghostObject = BABYLON.MeshBuilder.CreateBox("wall-ghost", { width: 4, height: 2, depth: 1 }, scene);
+        const mat = new BABYLON.StandardMaterial("wall-ghost-mat", scene);
+        mat.diffuseColor = new BABYLON.Color3(1, 0, 0);
+        mat.alpha = 0.3;
+        ghostObject.material = mat;
+        ghostObject.isPickable = false;
+    } else {
+        btn.innerText = "🧱 투명벽 배치";
+        btn.style.boxShadow = "none";
+        if (ghostObject) ghostObject.dispose();
+        ghostObject = null;
     }
 };
 
@@ -124,7 +167,7 @@ window.deselectObject = () => deselectAllObjects();
 const highlightObject = (mesh, isSelected) => {
     if (!mesh) return;
     mesh.renderOutline = isSelected;
-    mesh.outlineColor = new BABYLON.Color3(1, 0, 1); // 보라색 외곽선
+    mesh.outlineColor = new BABYLON.Color3(1, 0, 1);
     mesh.outlineWidth = 0.2;
     mesh.showBoundingBox = isSelected;
     
@@ -145,6 +188,13 @@ window.startAdjust = (type, delta) => {
             if (type === 'y') { obj.y += delta; mesh.position.y = obj.y; }
             if (type === 'z') { obj.z += delta; mesh.position.z = obj.z; }
             if (type === 'rot') { obj.rotation += delta; mesh.rotation.y = obj.rotation; }
+            
+            if (obj.type === 'invisibleWall') {
+                if (!obj.scale) obj.scale = { x: 1, y: 1, z: 1 };
+                if (type === 'sx') { obj.scale.x += delta; mesh.scaling.x = obj.scale.x; }
+                if (type === 'sy') { obj.scale.y += delta; mesh.scaling.y = obj.scale.y; }
+                if (type === 'sz') { obj.scale.z += delta; mesh.scaling.z = obj.scale.z; }
+            }
             updateVisualWalls(obj);
         });
     };
@@ -160,7 +210,6 @@ window.stopAdjust = () => {
     }
 };
 
-// 투명벽 설정 업데이트 함수
 window.updateWallSettings = () => {
     if (selectedObjects.length === 0) return;
     
@@ -175,7 +224,6 @@ window.updateWallSettings = () => {
     });
 };
 
-// 에디터 내에서 투명벽 시각화 (빨간 선 메시)
 const updateVisualWalls = (obj) => {
     if (!obj.visualWalls) obj.visualWalls = [];
     obj.visualWalls.forEach(w => w.dispose());
@@ -183,16 +231,14 @@ const updateVisualWalls = (obj) => {
 
     if (!obj.walls) return;
 
-    const size = 4; // 8단위 블록의 절반
     const wallColor = new BABYLON.Color3(1, 0, 0);
     const wallHeight = 2;
 
-    // F(0), B(1), L(2), R(3)
     const configs = [
-        { name: "F", pos: new BABYLON.Vector3(0, wallHeight/2, size), rot: 0, scale: new BABYLON.Vector3(8, wallHeight, 0.1) },
-        { name: "B", pos: new BABYLON.Vector3(0, wallHeight/2, -size), rot: 0, scale: new BABYLON.Vector3(8, wallHeight, 0.1) },
-        { name: "L", pos: new BABYLON.Vector3(-size, wallHeight/2, 0), rot: Math.PI/2, scale: new BABYLON.Vector3(8, wallHeight, 0.1) },
-        { name: "R", pos: new BABYLON.Vector3(size, wallHeight/2, 0), rot: Math.PI/2, scale: new BABYLON.Vector3(8, wallHeight, 0.1) }
+        { name: "F", pos: new BABYLON.Vector3(0, wallHeight/2, 4), rot: 0, scale: new BABYLON.Vector3(6.4, wallHeight, 0.1) },
+        { name: "B", pos: new BABYLON.Vector3(0, wallHeight/2, -4), rot: 0, scale: new BABYLON.Vector3(6.4, wallHeight, 0.1) },
+        { name: "L", pos: new BABYLON.Vector3(-3.2, wallHeight/2, 0), rot: Math.PI/2, scale: new BABYLON.Vector3(8, wallHeight, 0.1) },
+        { name: "R", pos: new BABYLON.Vector3(3.2, wallHeight/2, 0), rot: Math.PI/2, scale: new BABYLON.Vector3(8, wallHeight, 0.1) }
     ];
 
     obj.walls.forEach((enabled, i) => {
@@ -215,12 +261,19 @@ const updateVisualWalls = (obj) => {
 window.toggleDeleteMode = () => {
     isDeleteMode = !isDeleteMode;
     isEditMode = false;
+    isWallMode = false;
     const btn = document.getElementById("btn-delete");
     const eBtn = document.getElementById("btn-edit");
+    const wBtn = document.getElementById("btn-wall");
+
     eBtn.classList.remove("active");
     eBtn.style.background = "#0ff";
     eBtn.style.color = "black";
     eBtn.innerText = "✏️ 편집 모드 OFF";
+    
+    wBtn.innerText = "🧱 투명벽 배치";
+    wBtn.style.boxShadow = "none";
+
     deselectAllObjects();
 
     if (isDeleteMode) {
@@ -236,41 +289,64 @@ window.toggleDeleteMode = () => {
     }
 };
 
-window.addEventListener("message", (event) => {
-    if (event.data && event.data.type === "LOAD_MAP") {
-        const map = event.data.map;
-        loadMapData(map);
-    }
-});
-
 const loadMapData = (map) => {
-    startPos = map.startPos;
+    if (!map) return;
+    
+    startPos = map.startPos || startPos;
     if (startPointMesh) {
         startPointMesh.position.set(startPos.x, 0.2, startPos.z);
         startPointMesh.rotation.y = startPos.rotation;
     }
 
-    endPos = { x: map.parkingSpot.x, z: map.parkingSpot.z };
-    if (endPointMesh) {
-        endPointMesh.position.set(endPos.x, 0.05, endPos.z);
+    if (map.parkingSpot) {
+        endPos = { x: map.parkingSpot.x, z: map.parkingSpot.z };
+        if (endPointMesh) {
+            endPointMesh.position.set(endPos.x, 0.05, endPos.z);
+        }
     }
 
     clearMap();
-    map.objects.forEach(obj => {
-        BABYLON.SceneLoader.ImportMesh("", "roads/models/", obj.type + ".glb", scene, (meshes) => {
-            const newObj = new BABYLON.Mesh("placed", scene);
-            meshes.forEach(m => {
-                m.parent = newObj;
-                if (m.material) m.material.backFaceCulling = false;
-            });
-            newObj.position.set(obj.x, obj.y || 0.01, obj.z);
-            newObj.rotation.y = obj.rotation;
-            newObj.scaling = new BABYLON.Vector3(BASE_SCALE, BASE_SCALE, BASE_SCALE);
-            const dataObj = { type: obj.type, x: obj.x, y: obj.y || 0.01, z: obj.z, rotation: obj.rotation, mesh: newObj, walls: obj.walls || [false, false, false, false] };
-            placedObjects.push(dataObj);
-            updateVisualWalls(dataObj);
+    if (map.objects) {
+        map.objects.forEach(obj => {
+            if (obj.type === 'invisibleWall') {
+                const wall = BABYLON.MeshBuilder.CreateBox("placed", { width: 4, height: 2, depth: 1 }, scene);
+                wall.position.set(obj.x, obj.y, obj.z);
+                wall.rotation.y = obj.rotation;
+                if (obj.scale) {
+                    wall.scaling.set(obj.scale.x, obj.scale.y, obj.scale.z);
+                }
+                const mat = new BABYLON.StandardMaterial("v-wall-mat", scene);
+                mat.diffuseColor = new BABYLON.Color3(1, 0, 0);
+                mat.alpha = 0.4;
+                wall.material = mat;
+
+                const dataObj = { 
+                    type: 'invisibleWall', 
+                    x: obj.x, y: obj.y, z: obj.z, 
+                    rotation: obj.rotation, 
+                    scale: obj.scale || { x: 1, y: 1, z: 1 },
+                    mesh: wall 
+                };
+                placedObjects.push(dataObj);
+            } else {
+                BABYLON.SceneLoader.ImportMesh("", "roads/models/", obj.type + ".glb", scene, (meshes) => {
+                    const newObj = new BABYLON.Mesh("placed", scene);
+                    meshes.forEach(m => {
+                        m.parent = newObj;
+                        if (m.material) m.material.backFaceCulling = false;
+                    });
+                    newObj.position.set(obj.x, obj.y || 0.01, obj.z);
+                    newObj.rotation.y = obj.rotation;
+                    newObj.scaling = new BABYLON.Vector3(BASE_SCALE, BASE_SCALE, BASE_SCALE);
+                    const dataObj = { type: obj.type, x: obj.x, y: obj.y || 0.01, z: obj.z, rotation: obj.rotation, mesh: newObj, walls: obj.walls || [false, false, false, false] };
+                    placedObjects.push(dataObj);
+                    updateVisualWalls(dataObj);
+                }, null, (scene, message) => {
+                    console.error("Failed to load road model:", obj.type, message);
+                });
+            }
         });
-    });
+    }
 };
 
 const initEditor = (diff) => {
@@ -279,17 +355,7 @@ const initEditor = (diff) => {
     floorMat.diffuseColor = theme.floorColor;
     ground.material = floorMat;
 
-    theme.walls.forEach(w => {
-        const wall = BABYLON.MeshBuilder.CreateBox("env-wall", { width: w.w, height: 2, depth: w.l }, scene);
-        wall.position = new BABYLON.Vector3(w.x, 1, w.z);
-        const wallMat = new BABYLON.StandardMaterial("wallMat", scene);
-        wallMat.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5);
-        wallMat.alpha = 0.2;
-        wall.material = wallMat;
-        wall.isPickable = false;
-    });
-
-    BABYLON.SceneLoader.ImportMesh("", "kenney_car-kit/Models/GLB format/", "sedan.glb", scene, (meshes) => {
+    BABYLON.SceneLoader.ImportMesh("", "kenney_car-kit/Models/GLB%20format/", "sedan.glb", scene, (meshes) => {
         startPointMesh = new BABYLON.Mesh("startPoint", scene);
         meshes.forEach(m => {
             m.parent = startPointMesh;
@@ -301,7 +367,7 @@ const initEditor = (diff) => {
         startPointMesh.scaling = new BABYLON.Vector3(0.8, 0.8, 0.8);
         
         if (window.opener && window.opener.customMapData) {
-            startPos = window.opener.customMapData.startPos;
+            startPos = window.opener.customMapData.startPos || startPos;
         }
 
         startPointMesh.position.set(startPos.x, 0.2, startPos.z);
@@ -314,6 +380,10 @@ const initEditor = (diff) => {
             startPos.z = startPointMesh.position.z;
         });
         startPointMesh.addBehavior(dragStart);
+        
+        if (window.opener && window.opener.customMapData) {
+            loadMapData(window.opener.customMapData);
+        }
     });
 
     if (window.opener && window.opener.customMapData) {
@@ -335,10 +405,6 @@ const initEditor = (diff) => {
         endPos.z = endPointMesh.position.z;
     });
     endPointMesh.addBehavior(dragEnd);
-
-    if (window.opener && window.opener.customMapData) {
-        loadMapData(window.opener.customMapData);
-    }
 };
 
 const initPalette = () => {
@@ -350,6 +416,7 @@ const initPalette = () => {
         item.onclick = () => {
             if (isDeleteMode) toggleDeleteMode();
             if (isEditMode) toggleEditMode();
+            if (isWallMode) toggleWallMode();
             if (selectedRoadType === roadId) {
                 selectedRoadType = null;
                 item.classList.remove("selected");
@@ -382,12 +449,12 @@ const createScene = () => {
     ground.material = grid;
 
     scene.onPointerMove = () => {
-        if (!selectedRoadType || !ghostObject || isDeleteMode || isEditMode) return;
+        if ((!selectedRoadType && !isWallMode) || !ghostObject || isDeleteMode || isEditMode) return;
         const pick = scene.pick(scene.pointerX, scene.pointerY, (m) => m === ground);
         if (pick.hit) {
-            const x = Math.round(pick.pickedPoint.x / SNAP_UNIT) * SNAP_UNIT;
-            const z = Math.round(pick.pickedPoint.z / SNAP_UNIT) * SNAP_UNIT;
-            ghostObject.position.set(x, 0.02, z);
+            const x = Math.round(pick.pickedPoint.x / (isWallMode ? 1 : SNAP_UNIT)) * (isWallMode ? 1 : SNAP_UNIT);
+            const z = Math.round(pick.pickedPoint.z / (isWallMode ? 1 : SNAP_UNIT)) * (isWallMode ? 1 : SNAP_UNIT);
+            ghostObject.position.set(x, isWallMode ? 1 : 0.02, z);
         }
     };
 
@@ -412,25 +479,22 @@ const createScene = () => {
             const pick = scene.pick(scene.pointerX, scene.pointerY);
             if (pick.hit && pick.pickedMesh) {
                 let target = pick.pickedMesh;
-                
                 let placedTarget = target;
                 while (placedTarget && placedTarget.name !== "placed") {
                     placedTarget = placedTarget.parent;
                 }
-
                 let specialTarget = null;
                 if (target.name === "startPoint" || (target.parent && target.parent.name === "startPoint")) {
                     specialTarget = startPointMesh;
                 } else if (target.name === "endPoint") {
                     specialTarget = endPointMesh;
                 }
-
                 const finalTarget = placedTarget || specialTarget;
 
                 if (finalTarget) {
                     const obj = placedObjects.find(o => o.mesh === finalTarget) || 
-                               (finalTarget === startPointMesh ? { mesh: startPointMesh, get x() { return startPos.x }, set x(v) { startPos.x = v }, get y() { return startPointMesh.position.y }, set y(v) { startPointMesh.position.y = v }, get z() { return startPos.z }, set z(v) { startPos.z = v }, get rotation() { return startPos.rotation }, set rotation(v) { startPos.rotation = v } } : 
-                               (finalTarget === endPointMesh ? { mesh: endPointMesh, get x() { return endPos.x }, set x(v) { endPos.x = v }, get y() { return endPointMesh.position.y }, set y(v) { endPointMesh.position.y = v }, get z() { return endPos.z }, set z(v) { endPos.z = v }, get rotation() { return 0 }, set rotation(v) {} } : null));
+                               (finalTarget === startPointMesh ? { type: 'start', mesh: startPointMesh, get x() { return startPos.x }, set x(v) { startPos.x = v }, get y() { return startPointMesh.position.y }, set y(v) { startPointMesh.position.y = v }, get z() { return startPos.z }, set z(v) { startPos.z = v }, get rotation() { return startPos.rotation }, set rotation(v) { startPos.rotation = v } } : 
+                               (finalTarget === endPointMesh ? { type: 'end', mesh: endPointMesh, get x() { return endPos.x }, set x(v) { endPos.x = v }, get y() { return endPointMesh.position.y }, set y(v) { endPointMesh.position.y = v }, get z() { return endPos.z }, set z(v) { endPos.z = v }, get rotation() { return 0 }, set rotation(v) {} } : null));
                     
                     if (obj) {
                         if (!evt.ctrlKey && !evt.shiftKey) {
@@ -451,23 +515,26 @@ const createScene = () => {
                         
                         if (selectedObjects.length > 0) {
                             document.getElementById("transform-panel").style.display = "block";
-                            // 첫 번째 선택된 객체의 벽 설정 복원
                             const firstObj = selectedObjects[0];
+                            document.getElementById("panel-title").innerText = (firstObj.type === 'invisibleWall') ? "📏 투명벽 정밀 조정" : "🎯 블록 정밀 조정";
+                            document.getElementById("wall-scale-settings").style.display = (firstObj.type === 'invisibleWall') ? "block" : "none";
+                            document.getElementById("wall-settings").style.display = (finalTarget === placedTarget && firstObj.type !== 'invisibleWall') ? "block" : "none";
+
                             if (firstObj.walls) {
                                 document.getElementById('wall-f').checked = firstObj.walls[0];
                                 document.getElementById('wall-b').checked = firstObj.walls[1];
                                 document.getElementById('wall-l').checked = firstObj.walls[2];
                                 document.getElementById('wall-r').checked = firstObj.walls[3];
-                                document.getElementById('wall-settings').style.display = (finalTarget === placedTarget) ? "block" : "none";
                             }
-                        } else {
-                            document.getElementById("transform-panel").style.display = "none";
                         }
                     }
                 }
             } else {
                 if (!evt.ctrlKey && !evt.shiftKey) deselectAllObjects();
             }
+        } else if (isWallMode) {
+            const pick = scene.pick(scene.pointerX, scene.pointerY, (m) => m === ground);
+            if (pick.hit) placeWall();
         } else if (selectedRoadType) {
             const pick = scene.pick(scene.pointerX, scene.pointerY, (m) => m === ground);
             if (pick.hit) placeRoad();
@@ -550,6 +617,30 @@ const placeRoad = () => {
     });
 };
 
+const placeWall = () => {
+    if (!ghostObject) return;
+    const pos = ghostObject.position.clone();
+    const rot = ghostObject.rotation.y;
+
+    const wall = BABYLON.MeshBuilder.CreateBox("placed", { width: 4, height: 2, depth: 1 }, scene);
+    wall.position.copyFrom(pos);
+    wall.rotation.y = rot;
+    
+    const mat = new BABYLON.StandardMaterial("v-wall-mat", scene);
+    mat.diffuseColor = new BABYLON.Color3(1, 0, 0);
+    mat.alpha = 0.4;
+    wall.material = mat;
+    
+    const dataObj = { 
+        type: 'invisibleWall', 
+        x: pos.x, y: pos.y, z: pos.z, 
+        rotation: rot, 
+        scale: { x: 1, y: 1, z: 1 },
+        mesh: wall 
+    };
+    placedObjects.push(dataObj);
+};
+
 window.clearMap = () => {
     placedObjects.forEach(o => {
         if (o.visualWalls) o.visualWalls.forEach(vw => vw.dispose());
@@ -563,11 +654,26 @@ window.exportMap = () => {
         difficulty: currentDifficulty,
         startPos: startPos,
         parkingSpot: { x: endPos.x, z: endPos.z, w: MAP_THEMES[currentDifficulty].parkingSpot.w, l: MAP_THEMES[currentDifficulty].parkingSpot.l },
-        objects: placedObjects.map(o => ({ type: o.type, x: o.x, y: o.y, z: o.z, rotation: o.rotation, walls: o.walls }))
+        objects: placedObjects.map(o => ({ 
+            type: o.type, 
+            x: o.x, 
+            y: o.y, 
+            z: o.z, 
+            rotation: o.rotation, 
+            walls: o.walls,
+            scale: o.scale
+        }))
     }, null, 2);
     const el = document.createElement('textarea'); el.value = data; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
     alert("Map data copied!");
 };
+
+window.addEventListener("message", (event) => {
+    if (event.data && event.data.type === "LOAD_MAP") {
+        const map = event.data.map;
+        loadMapData(map);
+    }
+});
 
 initPalette();
 createScene();

@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Road Tycoon Editor</title>
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
-    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
-    <script src="https://cdn.babylonjs.com/materialsLibrary/babylon.gridMaterial.min.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://preview.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #111; color: white; font-family: sans-serif; }
         #renderCanvas { width: 100%; height: 100%; touch-action: none; }
@@ -101,28 +101,29 @@
     <div id="controls">
         <button id="btn-edit" class="btn" onclick="toggleEditMode()">✏️ 편집 모드 OFF</button>
         <button id="btn-delete" class="btn delete-mode" onclick="toggleDeleteMode()">🗑️ 삭제 모드 OFF</button>
+        <button id="btn-wall" class="btn" style="background: #ff5722; color: white;" onclick="toggleWallMode()">🧱 투명벽 배치</button>
         <button class="btn" onclick="clearMap()">전체 초기화</button>
         <button class="btn create" onclick="exportMap()">만들기 (Apply to Game)</button>
     </div>
 
     <!-- 정밀 조정 패널 -->
     <div id="transform-panel" style="display: none; position: absolute; bottom: 80px; right: 20px; background: rgba(0,0,0,0.9); padding: 20px; border-radius: 15px; border: 2px solid #f0f; width: 220px;">
-        <h3 style="margin: 0 0 15px 0; color: #f0f; font-size: 1rem;">🎯 블록 정밀 조정</h3>
+        <h3 id="panel-title" style="margin: 0 0 15px 0; color: #f0f; font-size: 1rem;">🎯 블록 정밀 조정</h3>
         
         <div class="adj-group" style="margin-bottom: 10px;">
-            <label style="display: block; font-size: 0.8rem; margin-bottom: 5px;">가로 (X)</label>
+            <label style="display: block; font-size: 0.8rem; margin-bottom: 5px;">가로 위치 (X)</label>
             <button class="btn" style="padding: 5px 10px;" onmousedown="startAdjust('x', -0.1)" onmouseup="stopAdjust()" onmouseleave="stopAdjust()">-0.1</button>
             <button class="btn" style="padding: 5px 10px;" onmousedown="startAdjust('x', 0.1)" onmouseup="stopAdjust()" onmouseleave="stopAdjust()">+0.1</button>
         </div>
 
         <div class="adj-group" style="margin-bottom: 10px;">
-            <label style="display: block; font-size: 0.8rem; margin-bottom: 5px;">높이 (Y)</label>
+            <label style="display: block; font-size: 0.8rem; margin-bottom: 5px;">높이 위치 (Y)</label>
             <button class="btn" style="padding: 5px 10px; background: #ff0;" onmousedown="startAdjust('y', -0.1)" onmouseup="stopAdjust()" onmouseleave="stopAdjust()">-0.1</button>
             <button class="btn" style="padding: 5px 10px; background: #ff0;" onmousedown="startAdjust('y', 0.1)" onmouseup="stopAdjust()" onmouseleave="stopAdjust()">+0.1</button>
         </div>
 
         <div class="adj-group" style="margin-bottom: 10px;">
-            <label style="display: block; font-size: 0.8rem; margin-bottom: 5px;">세로 (Z)</label>
+            <label style="display: block; font-size: 0.8rem; margin-bottom: 5px;">세로 위치 (Z)</label>
             <button class="btn" style="padding: 5px 10px;" onmousedown="startAdjust('z', -0.1)" onmouseup="stopAdjust()" onmouseleave="stopAdjust()">-0.1</button>
             <button class="btn" style="padding: 5px 10px;" onmousedown="startAdjust('z', 0.1)" onmouseup="stopAdjust()" onmouseleave="stopAdjust()">+0.1</button>
         </div>
@@ -131,6 +132,26 @@
             <label style="display: block; font-size: 0.8rem; margin-bottom: 5px;">회전 (R)</label>
             <button class="btn" style="padding: 5px 10px; background: #0f0;" onmousedown="startAdjust('rot', -0.02)" onmouseup="stopAdjust()" onmouseleave="stopAdjust()">-1°</button>
             <button class="btn" style="padding: 5px 10px; background: #0f0;" onmousedown="startAdjust('rot', 0.02)" onmouseup="stopAdjust()" onmouseleave="stopAdjust()">+1°</button>
+        </div>
+
+        <!-- 투명벽 전용 크기 조절 UI -->
+        <div id="wall-scale-settings" style="display: none; margin-top: 15px; border-top: 1px solid #555; padding-top: 10px;">
+            <label style="display: block; font-size: 0.8rem; margin-bottom: 8px; color: #ff5722;">📏 투명벽 크기 조절</label>
+            <div class="adj-group" style="margin-bottom: 10px;">
+                <label style="display: block; font-size: 0.7rem; margin-bottom: 3px;">가로 너비 (Scale X)</label>
+                <button class="btn" style="padding: 3px 8px; font-size: 0.7rem;" onmousedown="startAdjust('sx', -0.2)" onmouseup="stopAdjust()" onmouseleave="stopAdjust()">-0.2</button>
+                <button class="btn" style="padding: 3px 8px; font-size: 0.7rem;" onmousedown="startAdjust('sx', 0.2)" onmouseup="stopAdjust()" onmouseleave="stopAdjust()">+0.2</button>
+            </div>
+            <div class="adj-group" style="margin-bottom: 10px;">
+                <label style="display: block; font-size: 0.7rem; margin-bottom: 3px;">높이 (Scale Y)</label>
+                <button class="btn" style="padding: 3px 8px; font-size: 0.7rem;" onmousedown="startAdjust('sy', -0.2)" onmouseup="stopAdjust()" onmouseleave="stopAdjust()">-0.2</button>
+                <button class="btn" style="padding: 3px 8px; font-size: 0.7rem;" onmousedown="startAdjust('sy', 0.2)" onmouseup="stopAdjust()" onmouseleave="stopAdjust()">+0.2</button>
+            </div>
+            <div class="adj-group" style="margin-bottom: 10px;">
+                <label style="display: block; font-size: 0.7rem; margin-bottom: 3px;">세로 두께 (Scale Z)</label>
+                <button class="btn" style="padding: 3px 8px; font-size: 0.7rem;" onmousedown="startAdjust('sz', -0.2)" onmouseup="stopAdjust()" onmouseleave="stopAdjust()">-0.2</button>
+                <button class="btn" style="padding: 3px 8px; font-size: 0.7rem;" onmousedown="startAdjust('sz', 0.2)" onmouseup="stopAdjust()" onmouseleave="stopAdjust()">+0.2</button>
+            </div>
         </div>
 
         <div id="wall-settings" style="margin-top: 15px; border-top: 1px solid #555; padding-top: 10px;">
