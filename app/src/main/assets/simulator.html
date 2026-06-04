@@ -26,9 +26,11 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start; /* 중앙 정렬에서 상단 정렬로 변경 */
             align-items: center;
-            overflow: hidden;
+            overflow-y: auto; /* 세로 스크롤 허용 */
+            padding-top: 50px;
+            padding-bottom: 100px; /* 하단 여백 추가 */
             background-image: 
                 radial-gradient(at 0% 0%, rgba(0, 255, 255, 0.1) 0, transparent 50%),
                 radial-gradient(at 100% 100%, rgba(255, 0, 128, 0.05) 0, transparent 50%);
@@ -238,8 +240,12 @@
         <!-- 가이드 패널 -->
         <div class="info-panel">
             <h2>웹 시뮬레이터 안내</h2>
-            <p>모바일 앱 WebView 내부에서 작동하도록 개발된 3D 주차 게임의 웹 시뮬레이터 버전입니다. 화면 크기를 전환하여 가로/세로 레이아웃 반응형 테스트를 진행할 수 있습니다.</p>
+            <p>모바일 앱 WebView 내부에서 작동하도록 개발된 3D 주차 게임의 웹 시뮬레이터 버전입니다.</p>
             
+            <button class="rotate-btn" style="width: 100%; margin-bottom: 15px; background: linear-gradient(135deg, #f0f 0%, #70f 100%);" onclick="if(window.frames[0] && window.frames[0].openEditor) window.frames[0].openEditor(); else location.href='editor.html';">
+                🏗️ 맵 에디터 (Tycoon Mode)
+            </button>
+
             <h2>조작 방법 (PC 키보드 지원)</h2>
             <ul class="control-guide">
                 <li><span class="key">W</span> 또는 <span class="key">↑</span> 가속 (Accel)</li>
