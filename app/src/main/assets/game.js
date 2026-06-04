@@ -475,12 +475,27 @@ function updatePhysics() {
     if(carPhysics.speed < -speedLimit) carPhysics.speed = -speedLimit;
 
     const wheelbase = v.l * 0.75;
+    
+    // 이전 위치 저장
+    const oldX = carPhysics.x;
+    const oldZ = carPhysics.z;
+    const oldAngle = carPhysics.angle;
+
     if(Math.abs(carPhysics.speed) > 0.005) {
         carPhysics.angle -= (carPhysics.speed / wheelbase) * Math.tan(steeringAngle);
     }
 
     carPhysics.x -= Math.sin(carPhysics.angle) * carPhysics.speed;
     carPhysics.z -= Math.cos(carPhysics.angle) * carPhysics.speed;
+
+    // 충돌 체크 (이동 차단 방식)
+    if (isCollidingWithBarrier()) {
+        // 충돌 발생 시 위치 되돌리기 및 속도 감속 (튕겨나감)
+        carPhysics.x = oldX;
+        carPhysics.z = oldZ;
+        carPhysics.angle = oldAngle;
+        carPhysics.speed *= -0.5; 
+    }
 
     if (scene && roadMeshes.length > 0) {
         const halfL = v.l * 0.4;
@@ -519,79 +534,44 @@ function updatePhysics() {
     }
 
     if (currentDifficulty !== 'FREE') {
-        checkCollisions();
+        // 배리어 충돌로 인한 게임 오버는 제거, 주차 성공만 체크
         checkWinCondition();
     }
 }
 
 /**
- * 카메라 조작 설정 (모바일 회전 및 줌)
+ * 배리어 충돌 여부 확인 (이동 차단용)
  */
-function setupMobileCamera() {
-    if (!camera) return;
-    let isTouching = false;
-    let lastX = 0, lastY = 0;
-    let startDist = 0;
-    const canvas = document.getElementById('renderCanvas');
-    if (!canvas) return;
-
-    canvas.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 1) {
-            isTouching = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
-        } else if (e.touches.length === 2) {
-            isTouching = false;
-            startDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-        }
-    }, { passive: false });
-
-    canvas.addEventListener('touchmove', (e) => {
-        if (e.touches.length === 1 && isTouching) {
-            const dx = e.touches[0].clientX - lastX;
-            const dy = e.touches[0].clientY - lastY;
-            camera.rotationOffset = (camera.rotationOffset + dx * 0.5) % 360;
-            camera.heightOffset = Math.max(1, Math.min(15, camera.heightOffset - dy * 0.05));
-            lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
-        } else if (e.touches.length === 2) {
-            const currentDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            const diff = currentDist - startDist;
-            camera.radius = Math.max(3, Math.min(30, camera.radius - diff * 0.05));
-            startDist = currentDist;
-        }
-    }, { passive: false });
-
-    canvas.addEventListener('touchend', () => { isTouching = false; });
-}
-
-function checkCollisions() {
-    // 시작 후 2.5초간 충돌 유예
-    if (Date.now() - gameStartTime < 2500) return;
-
-    // 배리어(Barrier) 메시 정밀 충돌 체크
-    if (carGroup && barrierMeshes.length > 0) {
-        const carMeshes = carGroup.getChildMeshes();
-        for (let barrier of barrierMeshes) {
-            const bPos = barrier.getAbsolutePosition();
-            const dist = BABYLON.Vector3.Distance(carGroup.position, bPos);
-            
-            // 배리어 메시 근처일 때만 정밀 체크
-            if (dist < 5) { 
-                for (let carMesh of carMeshes) {
-                    if (carMesh.intersectsMesh(barrier, false)) {
-                        gameOver(false, "CRASHED!");
-                        return;
-                    }
-                }
+function isCollidingWithBarrier() {
+    const corners = getCarCorners();
+    
+    // 1. 배리어 블록 영역 체크
+    for (let b of barrierObjects) {
+        const dist = Math.hypot(carPhysics.x - b.x, carPhysics.z - b.z);
+        if (dist < 6) {
+            const cos = Math.cos(-b.rotation);
+            const sin = Math.sin(-b.rotation);
+            for (let c of corners) {
+                const dx = c.x - b.x;
+                const dz = c.z - b.z;
+                const lx = dx * cos + dz * sin;
+                const lz = -dx * sin + dz * cos;
+                const margin = 3.65; 
+                if (Math.abs(lx) > margin || Math.abs(lz) > margin) return true;
             }
         }
     }
 
-    // 외부 경계(Walls) 충돌 체크 (필요한 경우만)
-    const corners = getCarCorners();
+    // 2. 외부 경계벽 체크
     for(let wall of walls) {
-        if(corners.some(c => c.x > wall.x && c.x < wall.x + wall.w && c.z > wall.z && c.z < wall.z + wall.l)) {
-            gameOver(false, "CRASHED!"); return;
-        }
+        if(corners.some(c => c.x > wall.x && c.x < wall.x + wall.w && c.z > wall.z && c.z < wall.z + wall.l)) return true;
     }
+
+    return false;
+}
+
+function checkCollisions() {
+    // 이제 물리 벽 시스템으로 대체되어 비워둡니다.
 }
 
 function getCarCorners() {
