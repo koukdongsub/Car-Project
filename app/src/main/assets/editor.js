@@ -145,6 +145,7 @@ window.startAdjust = (type, delta) => {
             if (type === 'y') { obj.y += delta; mesh.position.y = obj.y; }
             if (type === 'z') { obj.z += delta; mesh.position.z = obj.z; }
             if (type === 'rot') { obj.rotation += delta; mesh.rotation.y = obj.rotation; }
+            updateVisualWalls(obj);
         });
     };
 
@@ -157,6 +158,58 @@ window.stopAdjust = () => {
         clearInterval(adjustInterval);
         adjustInterval = null;
     }
+};
+
+// 투명벽 설정 업데이트 함수
+window.updateWallSettings = () => {
+    if (selectedObjects.length === 0) return;
+    
+    const f = document.getElementById('wall-f').checked;
+    const b = document.getElementById('wall-b').checked;
+    const l = document.getElementById('wall-l').checked;
+    const r = document.getElementById('wall-r').checked;
+    
+    selectedObjects.forEach(obj => {
+        obj.walls = [f, b, l, r];
+        updateVisualWalls(obj);
+    });
+};
+
+// 에디터 내에서 투명벽 시각화 (빨간 선 메시)
+const updateVisualWalls = (obj) => {
+    if (!obj.visualWalls) obj.visualWalls = [];
+    obj.visualWalls.forEach(w => w.dispose());
+    obj.visualWalls = [];
+
+    if (!obj.walls) return;
+
+    const size = 4; // 8단위 블록의 절반
+    const wallColor = new BABYLON.Color3(1, 0, 0);
+    const wallHeight = 2;
+
+    // F(0), B(1), L(2), R(3)
+    const configs = [
+        { name: "F", pos: new BABYLON.Vector3(0, wallHeight/2, size), rot: 0, scale: new BABYLON.Vector3(8, wallHeight, 0.1) },
+        { name: "B", pos: new BABYLON.Vector3(0, wallHeight/2, -size), rot: 0, scale: new BABYLON.Vector3(8, wallHeight, 0.1) },
+        { name: "L", pos: new BABYLON.Vector3(-size, wallHeight/2, 0), rot: Math.PI/2, scale: new BABYLON.Vector3(8, wallHeight, 0.1) },
+        { name: "R", pos: new BABYLON.Vector3(size, wallHeight/2, 0), rot: Math.PI/2, scale: new BABYLON.Vector3(8, wallHeight, 0.1) }
+    ];
+
+    obj.walls.forEach((enabled, i) => {
+        if (enabled) {
+            const wall = BABYLON.MeshBuilder.CreateBox("v-wall", { width: 1, height: 1, depth: 1 }, scene);
+            wall.parent = obj.mesh;
+            wall.position = configs[i].pos;
+            wall.rotation.y = configs[i].rot;
+            wall.scaling = configs[i].scale;
+            const mat = new BABYLON.StandardMaterial("v-wall-mat", scene);
+            mat.diffuseColor = wallColor;
+            mat.alpha = 0.5;
+            wall.material = mat;
+            wall.isPickable = false;
+            obj.visualWalls.push(wall);
+        }
+    });
 };
 
 window.toggleDeleteMode = () => {
@@ -213,7 +266,9 @@ const loadMapData = (map) => {
             newObj.position.set(obj.x, obj.y || 0.01, obj.z);
             newObj.rotation.y = obj.rotation;
             newObj.scaling = new BABYLON.Vector3(BASE_SCALE, BASE_SCALE, BASE_SCALE);
-            placedObjects.push({ type: obj.type, x: obj.x, y: obj.y || 0.01, z: obj.z, rotation: obj.rotation, mesh: newObj });
+            const dataObj = { type: obj.type, x: obj.x, y: obj.y || 0.01, z: obj.z, rotation: obj.rotation, mesh: newObj, walls: obj.walls || [false, false, false, false] };
+            placedObjects.push(dataObj);
+            updateVisualWalls(dataObj);
         });
     });
 };
@@ -347,6 +402,8 @@ const createScene = () => {
                     target = target.parent;
                 }
                 if (target && target.name === "placed") {
+                    const obj = placedObjects.find(o => o.mesh === target);
+                    if (obj && obj.visualWalls) obj.visualWalls.forEach(w => w.dispose());
                     placedObjects = placedObjects.filter(o => o.mesh !== target);
                     target.dispose();
                 }
@@ -394,6 +451,15 @@ const createScene = () => {
                         
                         if (selectedObjects.length > 0) {
                             document.getElementById("transform-panel").style.display = "block";
+                            // 첫 번째 선택된 객체의 벽 설정 복원
+                            const firstObj = selectedObjects[0];
+                            if (firstObj.walls) {
+                                document.getElementById('wall-f').checked = firstObj.walls[0];
+                                document.getElementById('wall-b').checked = firstObj.walls[1];
+                                document.getElementById('wall-l').checked = firstObj.walls[2];
+                                document.getElementById('wall-r').checked = firstObj.walls[3];
+                                document.getElementById('wall-settings').style.display = (finalTarget === placedTarget) ? "block" : "none";
+                            }
                         } else {
                             document.getElementById("transform-panel").style.display = "none";
                         }
@@ -416,6 +482,7 @@ const createScene = () => {
                 selectedObjects.forEach(obj => {
                     obj.rotation += Math.PI / 2;
                     obj.mesh.rotation.y = obj.rotation;
+                    updateVisualWalls(obj);
                 });
             } else {
                 currentRotation += Math.PI / 2;
@@ -478,12 +545,16 @@ const placeRoad = () => {
         newObj.position.y = 0.01;
         newObj.rotation.y = rot;
         newObj.scaling = new BABYLON.Vector3(BASE_SCALE, BASE_SCALE, BASE_SCALE);
-        placedObjects.push({ type, x: pos.x, y: 0.01, z: pos.z, rotation: rot, mesh: newObj });
+        const dataObj = { type, x: pos.x, y: 0.01, z: pos.z, rotation: rot, mesh: newObj, walls: [false, false, false, false] };
+        placedObjects.push(dataObj);
     });
 };
 
 window.clearMap = () => {
-    placedObjects.forEach(o => o.mesh.dispose());
+    placedObjects.forEach(o => {
+        if (o.visualWalls) o.visualWalls.forEach(vw => vw.dispose());
+        o.mesh.dispose();
+    });
     placedObjects = [];
 };
 
@@ -492,7 +563,7 @@ window.exportMap = () => {
         difficulty: currentDifficulty,
         startPos: startPos,
         parkingSpot: { x: endPos.x, z: endPos.z, w: MAP_THEMES[currentDifficulty].parkingSpot.w, l: MAP_THEMES[currentDifficulty].parkingSpot.l },
-        objects: placedObjects.map(o => ({ type: o.type, x: o.x, y: o.y, z: o.z, rotation: o.rotation }))
+        objects: placedObjects.map(o => ({ type: o.type, x: o.x, y: o.y, z: o.z, rotation: o.rotation, walls: o.walls }))
     }, null, 2);
     const el = document.createElement('textarea'); el.value = data; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
     alert("Map data copied!");

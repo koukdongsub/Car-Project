@@ -132,6 +132,16 @@
             <button class="btn" style="padding: 5px 10px; background: #0f0;" onmousedown="startAdjust('rot', -0.02)" onmouseup="stopAdjust()" onmouseleave="stopAdjust()">-1°</button>
             <button class="btn" style="padding: 5px 10px; background: #0f0;" onmousedown="startAdjust('rot', 0.02)" onmouseup="stopAdjust()" onmouseleave="stopAdjust()">+1°</button>
         </div>
+
+        <div id="wall-settings" style="margin-top: 15px; border-top: 1px solid #555; padding-top: 10px;">
+            <label style="display: block; font-size: 0.8rem; margin-bottom: 8px; color: #f0f;">🚫 투명벽 설정</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                <label style="font-size: 0.75rem;"><input type="checkbox" id="wall-f" onchange="updateWallSettings()"> 전(F)</label>
+                <label style="font-size: 0.75rem;"><input type="checkbox" id="wall-b" onchange="updateWallSettings()"> 후(B)</label>
+                <label style="font-size: 0.75rem;"><input type="checkbox" id="wall-l" onchange="updateWallSettings()"> 좌(L)</label>
+                <label style="font-size: 0.75rem;"><input type="checkbox" id="wall-r" onchange="updateWallSettings()"> 우(R)</label>
+            </div>
+        </div>
         
         <button class="btn" style="width: 100%; margin-top: 10px; background: #555; color: white;" onclick="deselectObject()">선택 해제</button>
     </div>

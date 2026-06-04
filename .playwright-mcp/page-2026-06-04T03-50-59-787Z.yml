@@ -1,0 +1,25 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e31]:
+    - heading "CAR PARKING" [level=1] [ref=e33]
+    - generic [ref=e34]:
+      - heading "CHOOSE YOUR VEHICLE" [level=2] [ref=e35]
+      - generic [ref=e36]:
+        - generic [ref=e37] [cursor=pointer]:
+          - generic [ref=e39]: A-01
+          - img [ref=e41]
+          - generic:
+            - generic: SEDAN
+            - generic: STANDARD / BALANCED
+        - generic [ref=e50] [cursor=pointer]:
+          - generic [ref=e52]: A-02
+          - img [ref=e54]
+          - generic:
+            - generic: SPORTS
+            - generic: HIGH SPEED / DRIFT
+        - generic [ref=e64] [cursor=pointer]:
+          - generic [ref=e66]: A-03
+          - img [ref=e68]
+          - generic:
+            - generic: TRUCK
+            - generic: HEAVY / HARD CONTROL
+  - text: C
