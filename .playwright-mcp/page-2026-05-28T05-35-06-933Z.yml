@@ -1,0 +1,75 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - heading "에셋을 배치할 맵을 선택하세요" [level=2] [ref=e4]
+    - paragraph [ref=e5]: 선택한 맵의 장애물과 주차 구역이 표시됩니다.
+    - generic [ref=e6]:
+      - button "EASY" [ref=e7] [cursor=pointer]
+      - button "MEDIUM" [ref=e8] [cursor=pointer]
+      - button "DIFFICULT" [ref=e9] [cursor=pointer]
+  - generic [ref=e10]: "R: Rotate | Delete: Remove | Left Click: Place"
+  - generic [ref=e12]:
+    - heading "Road Palette" [level=2] [ref=e13]
+    - generic [ref=e14]:
+      - generic [ref=e15] [cursor=pointer]:
+        - img [ref=e16]
+        - generic [ref=e17]: straight
+      - generic [ref=e18] [cursor=pointer]:
+        - img [ref=e19]
+        - generic [ref=e20]: bend
+      - generic [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+        - generic [ref=e23]: intersection
+      - generic [ref=e24] [cursor=pointer]:
+        - img [ref=e25]
+        - generic [ref=e26]: crossroad
+      - generic [ref=e27] [cursor=pointer]:
+        - img [ref=e28]
+        - generic [ref=e29]: roundabout
+      - generic [ref=e30] [cursor=pointer]:
+        - img [ref=e31]
+        - generic [ref=e32]: bridge
+      - generic [ref=e33] [cursor=pointer]:
+        - img [ref=e34]
+        - generic [ref=e35]: crossing
+      - generic [ref=e36] [cursor=pointer]:
+        - img [ref=e37]
+        - generic [ref=e38]: slant
+      - generic [ref=e39] [cursor=pointer]:
+        - img [ref=e40]
+        - generic [ref=e41]: end
+      - generic [ref=e42] [cursor=pointer]:
+        - img [ref=e43]
+        - generic [ref=e44]: side
+      - generic [ref=e45] [cursor=pointer]:
+        - img [ref=e46]
+        - generic [ref=e47]: square
+      - generic [ref=e48] [cursor=pointer]:
+        - img [ref=e49]
+        - generic [ref=e50]: driveway-single
+      - generic [ref=e51] [cursor=pointer]:
+        - img [ref=e52]
+        - generic [ref=e53]: driveway-double
+      - generic [ref=e54] [cursor=pointer]:
+        - img [ref=e55]
+        - generic [ref=e56]: curve
+      - generic [ref=e57] [cursor=pointer]:
+        - img [ref=e58]
+        - generic [ref=e59]: split
+      - generic [ref=e60] [cursor=pointer]:
+        - img [ref=e61]
+        - generic [ref=e62]: construction-barrier
+      - generic [ref=e63] [cursor=pointer]:
+        - img [ref=e64]
+        - generic [ref=e65]: construction-cone
+      - generic [ref=e66] [cursor=pointer]:
+        - img [ref=e67]
+        - generic [ref=e68]: construction-light
+      - generic [ref=e69] [cursor=pointer]:
+        - img [ref=e70]
+        - generic [ref=e71]: light-curved
+      - generic [ref=e72] [cursor=pointer]:
+        - img [ref=e73]
+        - generic [ref=e74]: light-square
+  - generic [ref=e75]:
+    - button "Clear Map" [ref=e76] [cursor=pointer]
+    - button "만들기 (Apply to Game)" [ref=e77] [cursor=pointer]

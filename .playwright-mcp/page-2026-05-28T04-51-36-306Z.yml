@@ -1,0 +1,44 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - heading "CAR PROJECT" [level=1] [ref=e3]
+    - paragraph [ref=e4]: 모바일 웹 시뮬레이션 환경
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - heading "웹 시뮬레이터 안내" [level=2] [ref=e7]
+      - paragraph [ref=e8]: 모바일 앱 WebView 내부에서 작동하도록 개발된 3D 주차 게임의 웹 시뮬레이터 버전입니다. 화면 크기를 전환하여 가로/세로 레이아웃 반응형 테스트를 진행할 수 있습니다.
+      - heading "조작 방법 (PC 키보드 지원)" [level=2] [ref=e9]
+      - list [ref=e10]:
+        - listitem [ref=e11]:
+          - generic [ref=e12]: W
+          - text: 또는
+          - generic [ref=e13]: ↑
+          - text: 가속 (Accel)
+        - listitem [ref=e14]:
+          - generic [ref=e15]: S
+          - text: 또는
+          - generic [ref=e16]: ↓
+          - text: 제동 (Brake)
+        - listitem [ref=e17]:
+          - generic [ref=e18]: A
+          - text: 또는
+          - generic [ref=e19]: ←
+          - text: 왼쪽 조향
+        - listitem [ref=e20]:
+          - generic [ref=e21]: D
+          - text: 또는
+          - generic [ref=e22]: →
+          - text: 오른쪽 조향
+      - paragraph [ref=e23]: ※ 마우스를 사용하여 화면 하단의 가상 핸들을 직접 드래그하거나 기어(D/R) 및 액셀/브레이크 페달을 직접 클릭/터치 조작하는 것도 가능합니다.
+    - generic [ref=e24]:
+      - iframe [ref=e27]:
+        - generic [active] [ref=f1e1]:
+          - generic [ref=f1e3]:
+            - img [ref=f1e4]
+            - generic [ref=f1e28]:
+              - heading "CAR PARKING" [level=1] [ref=f1e29]
+              - generic [ref=f1e30]: PREMIUM DRIVING EXPERIENCE
+          - text: C
+      - button "🔄 화면 회전 (가로/세로)" [ref=e28] [cursor=pointer]:
+        - generic [ref=e29]: 🔄
+        - text: 화면 회전 (가로/세로)
+  - contentinfo [ref=e30]: © 2026 Car Project Simulator. All rights reserved.

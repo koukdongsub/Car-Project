@@ -1,0 +1,63 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - heading "CAR PROJECT" [level=1] [ref=e3]
+    - paragraph [ref=e4]: 모바일 웹 시뮬레이션 환경
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - heading "웹 시뮬레이터 안내" [level=2] [ref=e7]
+      - paragraph [ref=e8]: 모바일 앱 WebView 내부에서 작동하도록 개발된 3D 주차 게임의 웹 시뮬레이터 버전입니다.
+      - button "🏗️ 맵 에디터 (Tycoon Mode)" [ref=e9] [cursor=pointer]
+      - heading "조작 방법 (PC 키보드 지원)" [level=2] [ref=e10]
+      - list [ref=e11]:
+        - listitem [ref=e12]:
+          - generic [ref=e13]: W
+          - text: 또는
+          - generic [ref=e14]: ↑
+          - text: 가속 (Accel)
+        - listitem [ref=e15]:
+          - generic [ref=e16]: S
+          - text: 또는
+          - generic [ref=e17]: ↓
+          - text: 제동 (Brake)
+        - listitem [ref=e18]:
+          - generic [ref=e19]: A
+          - text: 또는
+          - generic [ref=e20]: ←
+          - text: 왼쪽 조향
+        - listitem [ref=e21]:
+          - generic [ref=e22]: D
+          - text: 또는
+          - generic [ref=e23]: →
+          - text: 오른쪽 조향
+      - paragraph [ref=e24]: ※ 마우스를 사용하여 화면 하단의 가상 핸들을 직접 드래그하거나 기어(D/R) 및 액셀/브레이크 페달을 직접 클릭/터치 조작하는 것도 가능합니다.
+    - generic [ref=e25]:
+      - iframe [ref=e28]:
+        - generic [active] [ref=f1e1]:
+          - generic [ref=f1e31]:
+            - heading "CAR PARKING" [level=1] [ref=f1e33]
+            - generic [ref=f1e34]:
+              - heading "CHOOSE YOUR VEHICLE" [level=2] [ref=f1e35]
+              - generic [ref=f1e36]:
+                - generic [ref=f1e37] [cursor=pointer]:
+                  - generic [ref=f1e39]: A-01
+                  - img [ref=f1e41]
+                  - generic:
+                    - generic: SEDAN
+                    - generic: STANDARD / BALANCED
+                - generic [ref=f1e53] [cursor=pointer]:
+                  - generic [ref=f1e55]: A-02
+                  - img [ref=f1e57]
+                  - generic:
+                    - generic: SPORTS
+                    - generic: HIGH SPEED / DRIFT
+                - generic [ref=f1e70] [cursor=pointer]:
+                  - generic [ref=f1e72]: A-03
+                  - img [ref=f1e74]
+                  - generic:
+                    - generic: TRUCK
+                    - generic: HEAVY / HARD CONTROL
+          - text: C
+      - button "🔄 화면 회전 (가로/세로)" [active] [ref=e29] [cursor=pointer]:
+        - generic [ref=e30]: 🔄
+        - text: 화면 회전 (가로/세로)
+  - contentinfo [ref=e31]: © 2026 Car Project Simulator. All rights reserved.
