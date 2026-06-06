@@ -24,7 +24,7 @@ if %errorlevel% equ 0 (
     )
     
     echo [INFO] Opening the simulator in your default browser...
-    start http://localhost:3000/simulator.html
+    start http://localhost:3000/index.html
     echo.
     echo [INFO] To test on a mobile device, connect to the same Wi-Fi and open:
     echo        http://[YOUR_LOCAL_IP]:3000/index.html
@@ -40,7 +40,7 @@ if %errorlevel% equ 0 (
         echo [INFO] Python detected. Using python web server instead.
         echo.
         echo [INFO] Opening the simulator in your default browser...
-        start http://localhost:3000/simulator.html
+        start http://localhost:3000/index.html
         echo.
         echo [INFO] Starting Python HTTP server...
         echo        Mobile URL: http://[YOUR_LOCAL_IP]:3000/index.html
