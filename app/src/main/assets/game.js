@@ -15,17 +15,43 @@ let currentDifficulty = 'EASY';
 let customMapData = {
   "difficulty": "EASY",
   "startPos": {
-    "x": -1.4277184245467764,
-    "z": 33.0922874344515,
+    "x": -0.6844324808997577,
+    "z": 7.414442008446724,
     "rotation": 3.141592653589793
   },
   "parkingSpot": {
-    "x": 0,
-    "z": -35,
+    "x": -10.79747488177184,
+    "z": -21.839683178414262,
     "w": 2.25,
     "l": 4.5
   },
-  "objects": [] // 맵 에디터에서 생성된 데이터가 여기에 들어갑니다.
+  "objects": [
+    { "type": "road-square-pro", "x": 8,   "y": 0.01, "z": 0,   "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": 8,   "y": 0.01, "z": -8,  "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": 8,   "y": 0.01, "z": -16, "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": 0,   "y": 0.01, "z": -16, "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": 0,   "y": 0.01, "z": -8,  "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": 0,   "y": 0.01, "z": 0,   "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": -8,  "y": 0.01, "z": 0,   "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": -8,  "y": 0.01, "z": -8,  "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": -8,  "y": 0.01, "z": -16, "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": -8,  "y": 0.01, "z": -24, "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": 0,   "y": 0.01, "z": -24, "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": 8,   "y": 0.01, "z": -24, "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": 8,   "y": 0.01, "z": 8,   "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": 0,   "y": 0.01, "z": 8,   "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": -16, "y": 0.01, "z": 8,   "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": -8,  "y": 0.01, "z": 8,   "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": -16, "y": 0.01, "z": 0,   "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": -16, "y": 0.01, "z": -8,  "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": -16, "y": 0.01, "z": -16, "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": -16, "y": 0.01, "z": -24, "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": 16,  "y": 0.01, "z": -24, "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": 16,  "y": 0.01, "z": -16, "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": 16,  "y": 0.01, "z": -8,  "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": 16,  "y": 0.01, "z": 0,   "rotation": 0, "walls": [false,false,false,false] },
+    { "type": "road-square-pro", "x": 16,  "y": 0.01, "z": 8,   "rotation": 0, "walls": [false,false,false,false] }
+  ]
 };
 
 window.selectVehicle = function(type) {
@@ -143,7 +169,88 @@ function buildMap(difficulty) {
 
     // 커스텀 도로 오브젝트 로드 및 사용자 지정 투명벽 생성
     if (activeMap && activeMap.objects) {
+        // road-square-pro 절차적 생성용 상수 및 재질
+        const SQ_SNAP = 8, SQ_BW = 0.81, SQ_BH = 0.15;
+        const SQ_IS = (SQ_SNAP / 2 - SQ_BW) * 2 * 0.75;
+        const SQ_EXT = SQ_SNAP / 2 - SQ_IS / 2;
+        const SQ_COFF = SQ_IS / 2 + SQ_EXT / 2;
+        const SQ_BOFF = SQ_SNAP / 2 - SQ_BW / 2;
+        const SQ_BY = 0.1 + SQ_BH / 2;
+        const sqOM = new BABYLON.StandardMaterial("sqOM", scene);
+        sqOM.diffuseColor = new BABYLON.Color3(0.318, 0.333, 0.400);
+        const sqIM = new BABYLON.StandardMaterial("sqIM", scene);
+        sqIM.diffuseColor = new BABYLON.Color3(0.400, 0.420, 0.502);
+        const sqBM = new BABYLON.StandardMaterial("sqBM", scene);
+        sqBM.diffuseColor = new BABYLON.Color3(0.863, 0.863, 0.914);
+        const sqProTiles = [];
+
         activeMap.objects.forEach(obj => {
+            if (obj.type === 'road-square-pro') {
+                const root = new BABYLON.Mesh("sq-root", scene);
+                root.position.set(obj.x, obj.y || 0.01, obj.z);
+
+                const mkFloor = (name, w, h, d, px, py, pz, mat) => {
+                    const b = BABYLON.MeshBuilder.CreateBox(name, { width: w, height: h, depth: d }, scene);
+                    b.parent = root; b.position.set(px, py, pz); b.material = mat;
+                    roadMeshes.push(b); return b; // 레이캐스트 높이 추적 대상
+                };
+                const mkDeco = (name, w, h, d, px, py, pz, mat) => {
+                    const b = BABYLON.MeshBuilder.CreateBox(name, { width: w, height: h, depth: d }, scene);
+                    b.parent = root; b.position.set(px, py, pz); b.material = mat;
+                    b.isPickable = false; return b; // 연석 등 장식용: 레이캐스트 제외
+                };
+
+                mkFloor("sq-f",  SQ_SNAP, 0.1,  SQ_SNAP, 0, 0.05,  0, sqOM);
+                mkFloor("sq-fi", SQ_IS,   0.11, SQ_IS,   0, 0.055, 0, sqIM);
+
+                const innerExts = {};
+                [['N', SQ_IS, SQ_EXT, 0, -SQ_COFF], ['S', SQ_IS, SQ_EXT, 0, SQ_COFF],
+                 ['E', SQ_EXT, SQ_IS, SQ_COFF, 0], ['W', SQ_EXT, SQ_IS, -SQ_COFF, 0]]
+                .forEach(([key, w, d, x, z]) => {
+                    const s = mkFloor("sq-ie-"+key, w, 0.11, d, x, 0.055, z, sqIM);
+                    s.setEnabled(false); innerExts[key] = s;
+                });
+
+                const innerCornerExts = {};
+                [['NE', SQ_COFF, -SQ_COFF], ['NW', -SQ_COFF, -SQ_COFF],
+                 ['SE', SQ_COFF, SQ_COFF],  ['SW', -SQ_COFF, SQ_COFF]]
+                .forEach(([key, x, z]) => {
+                    const c = mkFloor("sq-icx-"+key, SQ_EXT, 0.11, SQ_EXT, x, 0.055, z, sqIM);
+                    c.setEnabled(false); innerCornerExts[key] = c;
+                });
+
+                const borders = {};
+                [[`N`, SQ_SNAP, SQ_BW, 0, -SQ_BOFF], [`S`, SQ_SNAP, SQ_BW, 0, SQ_BOFF],
+                 [`E`, SQ_BW, SQ_SNAP, SQ_BOFF, 0],  [`W`, SQ_BW, SQ_SNAP, -SQ_BOFF, 0]]
+                .forEach(([key, w, d, x, z]) => {
+                    const br = mkDeco("sq-b-"+key, w, SQ_BH, d, x, SQ_BY, z, sqBM);
+                    borders[key] = br;
+                });
+
+                sqProTiles.push({ obj, innerExts, innerCornerExts, borders });
+
+                // 투명 물리벽
+                if (obj.walls) {
+                    const size = SQ_SNAP / 2;
+                    const configs = [
+                        { dx: 0, dz: size }, { dx: 0, dz: -size },
+                        { dx: -size, dz: 0 }, { dx: size, dz: 0 }
+                    ];
+                    obj.walls.forEach((enabled, i) => {
+                        if (!enabled) return;
+                        const { dx, dz } = configs[i];
+                        const cos = Math.cos(obj.rotation), sin = Math.sin(obj.rotation);
+                        physicsWalls.push({
+                            x: obj.x + (dx * cos + dz * sin),
+                            z: obj.z + (-dx * sin + dz * cos),
+                            rotation: obj.rotation + (i < 2 ? 0 : Math.PI / 2),
+                            w: SQ_SNAP, h: 4
+                        });
+                    });
+                }
+                return;
+            }
+
             BABYLON.SceneLoader.ImportMesh("", "roads/models/", obj.type + ".glb", scene, (meshes) => {
                 const roadGroup = new BABYLON.Mesh("roadGroup", scene);
                 meshes.forEach(m => {
@@ -188,6 +295,33 @@ function buildMap(difficulty) {
                 }
             });
         });
+
+        // road-square-pro 인접 타일 기반 border/extension 업데이트
+        sqProTiles.forEach(tile => {
+            const { obj, innerExts, innerCornerExts, borders } = tile;
+            const find = (tx, tz) => sqProTiles.find(t => Math.abs(t.obj.x - tx) < 1 && Math.abs(t.obj.z - tz) < 1);
+            const hasN = !!find(obj.x, obj.z - SQ_SNAP);
+            const hasS = !!find(obj.x, obj.z + SQ_SNAP);
+            const hasE = !!find(obj.x + SQ_SNAP, obj.z);
+            const hasW = !!find(obj.x - SQ_SNAP, obj.z);
+            const hasNE = !!find(obj.x + SQ_SNAP, obj.z - SQ_SNAP);
+            const hasNW = !!find(obj.x - SQ_SNAP, obj.z - SQ_SNAP);
+            const hasSE = !!find(obj.x + SQ_SNAP, obj.z + SQ_SNAP);
+            const hasSW = !!find(obj.x - SQ_SNAP, obj.z + SQ_SNAP);
+
+            if (hasN) borders.N.setEnabled(false);
+            if (hasS) borders.S.setEnabled(false);
+            if (hasE) borders.E.setEnabled(false);
+            if (hasW) borders.W.setEnabled(false);
+
+            innerExts.N.setEnabled(hasN); innerExts.S.setEnabled(hasS);
+            innerExts.E.setEnabled(hasE); innerExts.W.setEnabled(hasW);
+
+            innerCornerExts.NE.setEnabled(hasN && hasE && hasNE);
+            innerCornerExts.NW.setEnabled(hasN && hasW && hasNW);
+            innerCornerExts.SE.setEnabled(hasS && hasE && hasSE);
+            innerCornerExts.SW.setEnabled(hasS && hasW && hasSW);
+        });
     }
 
     if (activeMap) {
@@ -199,7 +333,7 @@ function buildMap(difficulty) {
 
     // 주차 구역 시각화
     const spot = BABYLON.MeshBuilder.CreateGround("spot", { width: parkingSpot.w, height: parkingSpot.l }, scene);
-    spot.position = new BABYLON.Vector3(parkingSpot.x, 0.02, parkingSpot.z);
+    spot.position = new BABYLON.Vector3(parkingSpot.x, 0.13, parkingSpot.z);
     const spotMat = new BABYLON.StandardMaterial("spotMat", scene);
     spotMat.diffuseColor = new BABYLON.Color3(0, 0.8, 0.5);
     spotMat.alpha = 0.3;
@@ -264,10 +398,10 @@ function updatePhysics() {
         const dir = (currentGear === 'D') ? 1 : -1;
         carPhysics.speed += v.accel * dir;
     } else {
-        carPhysics.speed *= 0.97; 
+        carPhysics.speed *= 0.99;
     }
-    
-    if (controls.brake) carPhysics.speed *= 0.82; 
+
+    if (controls.brake) carPhysics.speed *= 0.93;
 
     const speedLimit = currentGear === 'D' ? v.maxSpeed : v.maxSpeed * 0.5;
     if(carPhysics.speed > speedLimit) carPhysics.speed = speedLimit;
@@ -392,7 +526,18 @@ function backToMenu() {
     document.getElementById('main-menu').classList.remove('hidden');
 }
 
+function backToVehicle() {
+    const vSelection = document.getElementById('vehicle-selection');
+    const dSelection = document.getElementById('difficulty-selection');
+    if (dSelection) dSelection.classList.add('hidden');
+    if (vSelection) {
+        vSelection.classList.remove('hidden');
+        vSelection.style.opacity = '1';
+    }
+}
+
 window.backToMenu = backToMenu;
+window.backToVehicle = backToVehicle;
 window.startGame = startGame;
 window.setGear = setGear;
 
@@ -437,7 +582,7 @@ function bindControls() {
     const moveSteer = (e) => { if (!isSteeringActive) return; const currentX = e.touches ? e.touches[0].clientX : e.clientX, deltaX = currentX - startX; let angle = Math.max(-120, Math.min(120, startWheelAngle + deltaX * 0.8)); currentWheelAngle = angle; if (wheel) wheel.style.transform = `rotate(${angle}deg)`; steeringAngle = -(angle / 120) * maxSteering; };
     const endSteer = () => { isSteeringActive = false; if (wheel) { wheel.style.transition = 'transform 0.3s ease-out'; wheel.style.transform = 'rotate(0deg)'; } currentWheelAngle = 0; };
     if (wheelContainer) { wheelContainer.onmousedown = wheelContainer.ontouchstart = startSteer; window.onmousemove = window.ontouchmove = moveSteer; window.onmouseup = window.ontouchend = endSteer; }
-    window.onkeydown = (e) => { const k = e.key.toLowerCase(); if(k === 'w' || k === 'arrowup') setControl('gas', true); if(k === 's' || k === 'arrowdown') setControl('brake', true); if(k === 'a' || k === 'arrowleft') setControl('left', true); if(k === 'd' || k === 'arrowright') setControl('right', true); };
+    window.onkeydown = (e) => { const k = e.key.toLowerCase(); if(k === 'w' || k === 'arrowup') setControl('gas', true); if(k === 's' || k === 'arrowdown') setControl('brake', true); if(k === 'a' || k === 'arrowleft') setControl('left', true); if(k === 'd' || k === 'arrowright') setControl('right', true); if(k === 'r') setGear(currentGear === 'D' ? 'R' : 'D'); };
     window.onkeyup = (e) => { const k = e.key.toLowerCase(); if(k === 'w' || k === 'arrowup') setControl('gas', false); if(k === 's' || k === 'arrowdown') setControl('brake', false); if(k === 'a' || k === 'arrowleft') setControl('left', false); if(k === 'd' || k === 'arrowright') setControl('right', false); };
 }
 
