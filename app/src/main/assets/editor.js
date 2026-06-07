@@ -53,27 +53,213 @@ const MAP_THEMES = {
     }
 };
 
-const roads = [
-    "road-straight", "road-straight-half", "road-straight-barrier", "road-straight-barrier-half", "road-straight-barrier-end",
-    "road-bend", "road-bend-barrier", "road-bend-sidewalk", "road-bend-square", "road-bend-square-barrier",
-    "road-intersection", "road-intersection-barrier", "road-intersection-line", "road-intersection-path",
-    "road-crossroad", "road-crossroad-barrier", "road-crossroad-line", "road-crossroad-path",
-    "road-curve", "road-curve-barrier", "road-curve-intersection", "road-curve-intersection-barrier", "road-curve-pavement",
-    "road-roundabout", "road-roundabout-barrier",
-    "road-bridge", "bridge-pillar", "bridge-pillar-wide",
-    "road-slant", "road-slant-barrier", "road-slant-high", "road-slant-high-barrier", "road-slant-flat", "road-slant-flat-high",
-    "road-slant-curve", "road-slant-curve-barrier", "road-slant-flat-curve",
-    "road-split", "road-split-barrier",
-    "road-side", "road-side-barrier", "road-side-entry", "road-side-entry-barrier", "road-side-exit", "road-side-exit-barrier",
-    "road-end", "road-end-barrier", "road-end-round", "road-end-round-barrier",
-    "road-crossing", "road-driveway-single", "road-driveway-single-barrier", "road-driveway-double", "road-driveway-double-barrier",
-    "road-square", "road-square-barrier",
-    "construction-barrier", "construction-cone", "construction-light",
-    "light-curved", "light-curved-double", "light-curved-cross",
-    "light-square", "light-square-double", "light-square-cross",
-    "sign-highway", "sign-highway-wide", "sign-highway-detailed",
-    "tile-high", "tile-low", "tile-slant", "tile-slantHigh"
+const roadGroups = [
+    { label: "직선", items: [
+        "road-straight", "road-straight-half", "road-straight-barrier", "road-straight-barrier-half", "road-straight-barrier-end"
+    ]},
+    { label: "곡선 / 커브", items: [
+        "road-bend", "road-bend-barrier", "road-bend-sidewalk", "road-bend-square", "road-bend-square-barrier",
+        "road-curve", "road-curve-barrier", "road-curve-intersection", "road-curve-intersection-barrier", "road-curve-pavement"
+    ]},
+    { label: "교차로", items: [
+        "road-intersection", "road-intersection-barrier", "road-intersection-line", "road-intersection-path",
+        "road-crossroad", "road-crossroad-barrier", "road-crossroad-line", "road-crossroad-path"
+    ]},
+    { label: "분기 / 측면", items: [
+        "road-split", "road-split-barrier",
+        "road-side", "road-side-barrier", "road-side-entry", "road-side-entry-barrier", "road-side-exit", "road-side-exit-barrier"
+    ]},
+    { label: "라운드어바웃", items: [
+        "road-roundabout", "road-roundabout-barrier"
+    ]},
+    { label: "경사 / 브리지", items: [
+        "road-bridge", "bridge-pillar", "bridge-pillar-wide",
+        "road-slant", "road-slant-barrier", "road-slant-high", "road-slant-high-barrier",
+        "road-slant-flat", "road-slant-flat-high", "road-slant-curve", "road-slant-curve-barrier", "road-slant-flat-curve"
+    ]},
+    { label: "도로 끝", items: [
+        "road-end", "road-end-barrier", "road-end-round", "road-end-round-barrier"
+    ]},
+    { label: "기타 도로", items: [
+        "road-crossing", "road-driveway-single", "road-driveway-single-barrier",
+        "road-driveway-double", "road-driveway-double-barrier", "road-square", "road-square-barrier",
+        "road-square-pro"
+    ]},
+    { label: "공사 / 장애물", items: [
+        "construction-barrier", "construction-cone", "construction-light"
+    ]},
+    { label: "가로등", items: [
+        "light-curved", "light-curved-double", "light-curved-cross",
+        "light-square", "light-square-double", "light-square-cross"
+    ]},
+    { label: "표지판", items: [
+        "sign-highway", "sign-highway-wide", "sign-highway-detailed"
+    ]},
+    { label: "타일", items: [
+        "tile-high", "tile-low", "tile-slant", "tile-slantHigh"
+    ]},
 ];
+
+const SQ_BORDER_W = 0.81;
+const SQ_BORDER_H = 0.15;
+
+const createProceduralSquareMesh = (alpha = 1) => {
+    const root = new BABYLON.Mesh("placed", scene);
+    const half = SNAP_UNIT / 2;
+    const bOff = half - SQ_BORDER_W / 2;
+    const bY = 0.1 + SQ_BORDER_H / 2;
+
+    // 외곽 도로면 (UV 0.031 → RGB 81,85,102)
+    const floorOuterMat = new BABYLON.StandardMaterial("sq-floor-outer-mat", scene);
+    floorOuterMat.diffuseColor = new BABYLON.Color3(0.318, 0.333, 0.400);
+    if (alpha < 1) floorOuterMat.alpha = alpha;
+
+    // 중심 도로면 (UV 0.156 → RGB 102,107,128)
+    const floorInnerMat = new BABYLON.StandardMaterial("sq-floor-inner-mat", scene);
+    floorInnerMat.diffuseColor = new BABYLON.Color3(0.400, 0.420, 0.502);
+    if (alpha < 1) floorInnerMat.alpha = alpha;
+
+    // 연석 (UV 0.969 → RGB 220,220,233)
+    const borderMat = new BABYLON.StandardMaterial("sq-border-mat", scene);
+    borderMat.diffuseColor = new BABYLON.Color3(0.863, 0.863, 0.914);
+    if (alpha < 1) borderMat.alpha = alpha;
+
+    // 외곽 도로면: 연석 안쪽 전체 (±3.24 → 6.48단위)
+    const outerRoadSize = (SNAP_UNIT / 2 - SQ_BORDER_W) * 2;
+    const floor = BABYLON.MeshBuilder.CreateBox("sq-floor", { width: SNAP_UNIT, height: 0.1, depth: SNAP_UNIT }, scene);
+    floor.parent = root;
+    floor.position.y = 0.05;
+    floor.material = floorOuterMat;
+
+    const innerSize = (SNAP_UNIT / 2 - SQ_BORDER_W) * 2 * 0.75;
+    const ext      = SNAP_UNIT / 2 - innerSize / 2;
+    const cOff     = innerSize / 2 + ext / 2;
+    const curbOff  = ext / 2 - SQ_BORDER_W / 2;
+
+    // 중심 도로면 (항상 표시)
+    const floorInner = BABYLON.MeshBuilder.CreateBox("sq-floor-inner", { width: innerSize, height: 0.11, depth: innerSize }, scene);
+    floorInner.parent = root;
+    floorInner.position.y = 0.055;
+    floorInner.material = floorInnerMat;
+    floorInner.isPickable = false;
+
+    // 4방향 연장 조각: 인접 타일 방향으로 개별 활성화
+    const innerExts = {};
+    [
+        { key: 'N', w: innerSize, d: ext, x: 0,     z: -cOff },
+        { key: 'S', w: innerSize, d: ext, x: 0,     z:  cOff },
+        { key: 'E', w: ext, d: innerSize, x:  cOff, z: 0     },
+        { key: 'W', w: ext, d: innerSize, x: -cOff, z: 0     },
+    ].forEach(({ key, w, d, x, z }) => {
+        const s = BABYLON.MeshBuilder.CreateBox("sq-iext-" + key, { width: w, height: 0.11, depth: d }, scene);
+        s.parent = root;
+        s.position.set(x, 0.055, z);
+        s.material = floorInnerMat;
+        s.isPickable = false;
+        s.setEnabled(false);
+        innerExts[key] = s;
+    });
+
+    // 대각선 코너 조각: 대각선 타일이 있을 때만 활성화 (없으면 outer dark floor로 자연히 채워짐)
+    const innerCornerExts = {};
+    [
+        { key: 'NE', x:  cOff, z: -cOff },
+        { key: 'NW', x: -cOff, z: -cOff },
+        { key: 'SE', x:  cOff, z:  cOff },
+        { key: 'SW', x: -cOff, z:  cOff },
+    ].forEach(({ key, x, z }) => {
+        const c = BABYLON.MeshBuilder.CreateBox("sq-icx-" + key, { width: ext, height: 0.11, depth: ext }, scene);
+        c.parent = root;
+        c.position.set(x, 0.055, z);
+        c.material = floorInnerMat;
+        c.isPickable = false;
+        c.setEnabled(false);
+        innerCornerExts[key] = c;
+    });
+
+    const borders = {};
+    [
+        { key: 'N', w: SNAP_UNIT,    d: SQ_BORDER_W, pos: new BABYLON.Vector3(0,     bY, -bOff) },
+        { key: 'S', w: SNAP_UNIT,    d: SQ_BORDER_W, pos: new BABYLON.Vector3(0,     bY,  bOff) },
+        { key: 'E', w: SQ_BORDER_W,  d: SNAP_UNIT,   pos: new BABYLON.Vector3( bOff, bY,  0)    },
+        { key: 'W', w: SQ_BORDER_W,  d: SNAP_UNIT,   pos: new BABYLON.Vector3(-bOff, bY,  0)    },
+    ].forEach(({ key, w, d, pos }) => {
+        const b = BABYLON.MeshBuilder.CreateBox("sq-border", { width: w, height: SQ_BORDER_H, depth: d }, scene);
+        b.parent = root;
+        b.position = pos;
+        b.material = borderMat;
+        b.isPickable = false;
+        borders[key] = b;
+    });
+
+    // ㄱ자 내측 코너: 연석 조각만 (dark floor는 outer floor로 자연히 처리, 겹침 없음)
+    const corners = {};
+    [
+        { key: 'NE', cx:  cOff, cz: -cOff, nsZ: -curbOff, ewX:  curbOff },
+        { key: 'NW', cx: -cOff, cz: -cOff, nsZ: -curbOff, ewX: -curbOff },
+        { key: 'SE', cx:  cOff, cz:  cOff, nsZ:  curbOff, ewX:  curbOff },
+        { key: 'SW', cx: -cOff, cz:  cOff, nsZ:  curbOff, ewX: -curbOff },
+    ].forEach(({ key, cx, cz, nsZ, ewX }) => {
+        const cg = new BABYLON.Mesh("sq-corner-" + key, scene);
+        cg.parent = root;
+        cg.position.set(cx, 0, cz);
+
+        const curb = BABYLON.MeshBuilder.CreateBox("cc", { width: SQ_BORDER_W, height: SQ_BORDER_H, depth: SQ_BORDER_W }, scene);
+        curb.parent = cg;
+        curb.position.set(ewX, bY, nsZ);
+        curb.material = borderMat;
+        curb.isPickable = false;
+
+        cg.setEnabled(false);
+        corners[key] = cg;
+    });
+
+    return { root, borders, innerExts, innerCornerExts, corners };
+};
+
+const updateSquareBorders = () => {
+    const sqTiles = placedObjects.filter(o => o.isSqTile);
+    sqTiles.forEach(t => Object.values(t.borders).forEach(b => b.setEnabled(true)));
+    sqTiles.forEach(tile => {
+        const { x, z } = tile;
+        const find = (tx, tz) => sqTiles.find(o => Math.abs(o.x - tx) < 1 && Math.abs(o.z - tz) < 1);
+        const hasN = !!find(x,             z - SNAP_UNIT);
+        const hasS = !!find(x,             z + SNAP_UNIT);
+        const hasE = !!find(x + SNAP_UNIT, z            );
+        const hasW = !!find(x - SNAP_UNIT, z            );
+
+        if (hasN) tile.borders.N.setEnabled(false);
+        if (hasS) tile.borders.S.setEnabled(false);
+        if (hasE) tile.borders.E.setEnabled(false);
+        if (hasW) tile.borders.W.setEnabled(false);
+
+        if (tile.innerExts) {
+            tile.innerExts.N.setEnabled(hasN);
+            tile.innerExts.S.setEnabled(hasS);
+            tile.innerExts.E.setEnabled(hasE);
+            tile.innerExts.W.setEnabled(hasW);
+        }
+
+        if (tile.innerCornerExts || tile.corners) {
+            const hasNE = !!find(x + SNAP_UNIT, z - SNAP_UNIT);
+            const hasNW = !!find(x - SNAP_UNIT, z - SNAP_UNIT);
+            const hasSE = !!find(x + SNAP_UNIT, z + SNAP_UNIT);
+            const hasSW = !!find(x - SNAP_UNIT, z + SNAP_UNIT);
+            if (tile.innerCornerExts) {
+                tile.innerCornerExts.NE.setEnabled(hasN && hasE &&  hasNE);
+                tile.innerCornerExts.NW.setEnabled(hasN && hasW &&  hasNW);
+                tile.innerCornerExts.SE.setEnabled(hasS && hasE &&  hasSE);
+                tile.innerCornerExts.SW.setEnabled(hasS && hasW &&  hasSW);
+            }
+            if (tile.corners) {
+                tile.corners.NE.setEnabled(hasN && hasE && !hasNE);
+                tile.corners.NW.setEnabled(hasN && hasW && !hasNW);
+                tile.corners.SE.setEnabled(hasS && hasE && !hasSE);
+                tile.corners.SW.setEnabled(hasS && hasW && !hasSW);
+            }
+        }
+    });
+};
 
 window.selectDifficulty = (diff) => {
     currentDifficulty = diff;
@@ -97,7 +283,7 @@ window.toggleEditMode = () => {
         btn.style.background = "#f0f";
         btn.style.color = "white";
         btn.innerText = "✏️ 편집 모드 ON (블록 클릭)";
-        if (ghostObject) ghostObject.isVisible = false;
+        if (ghostObject) ghostObject.setEnabled(false);
     } else {
         btn.classList.remove("active");
         btn.style.background = "#0ff";
@@ -226,13 +412,13 @@ window.toggleDeleteMode = () => {
     if (isDeleteMode) {
         btn.classList.add("active");
         btn.innerText = "🗑️ 삭제 모드 ON (도로 클릭)";
-        if (ghostObject) ghostObject.isVisible = false;
+        if (ghostObject) ghostObject.setEnabled(false);
         selectedRoadType = null;
         document.querySelectorAll(".road-item").forEach(i => i.classList.remove("selected"));
     } else {
         btn.classList.remove("active");
         btn.innerText = "🗑️ 삭제 모드 OFF";
-        if (ghostObject) ghostObject.isVisible = true;
+        if (ghostObject && selectedRoadType) ghostObject.setEnabled(true);
     }
 };
 
@@ -257,6 +443,15 @@ const loadMapData = (map) => {
 
     clearMap();
     map.objects.forEach(obj => {
+        if (obj.type === 'road-square-pro') {
+            const { root, borders, innerExts, innerCornerExts, corners } = createProceduralSquareMesh();
+            root.position.set(obj.x, obj.y || 0.01, obj.z);
+            root.rotation.y = obj.rotation;
+            const dataObj = { type: obj.type, isSqTile: true, x: obj.x, y: obj.y || 0.01, z: obj.z, rotation: obj.rotation, mesh: root, borders, innerExts, innerCornerExts, corners, walls: obj.walls || [false, false, false, false] };
+            placedObjects.push(dataObj);
+            updateVisualWalls(dataObj);
+            return;
+        }
         BABYLON.SceneLoader.ImportMesh("", "roads/models/", obj.type + ".glb", scene, (meshes) => {
             const newObj = new BABYLON.Mesh("placed", scene);
             meshes.forEach(m => {
@@ -271,6 +466,7 @@ const loadMapData = (map) => {
             updateVisualWalls(dataObj);
         });
     });
+    updateSquareBorders();
 };
 
 const initEditor = (diff) => {
@@ -343,26 +539,45 @@ const initEditor = (diff) => {
 
 const initPalette = () => {
     const palette = document.getElementById("palette");
-    roads.forEach(roadId => {
-        const item = document.createElement("div");
-        item.className = "road-item";
-        item.innerHTML = `<img src="roads/previews/${roadId}.png" onerror="this.src='roads/previews/road-straight.png'"><span>${roadId.replace('road-', '')}</span>`;
-        item.onclick = () => {
-            if (isDeleteMode) toggleDeleteMode();
-            if (isEditMode) toggleEditMode();
-            if (selectedRoadType === roadId) {
-                selectedRoadType = null;
-                item.classList.remove("selected");
-                if (ghostObject) ghostObject.dispose();
-                ghostObject = null;
-            } else {
-                document.querySelectorAll(".road-item").forEach(i => i.classList.remove("selected"));
-                item.classList.add("selected");
-                selectedRoadType = roadId;
-                updateGhost();
-            }
+    roadGroups.forEach(group => {
+        const header = document.createElement("div");
+        header.className = "road-group-header";
+        header.innerHTML = `<span>${group.label}</span><span>▼</span>`;
+
+        const content = document.createElement("div");
+        content.className = "road-group-content";
+
+        header.onclick = () => {
+            const collapsed = content.classList.toggle("collapsed");
+            header.querySelector("span:last-child").textContent = collapsed ? "▶" : "▼";
         };
-        palette.appendChild(item);
+
+        group.items.forEach(roadId => {
+            const item = document.createElement("div");
+            item.className = "road-item";
+            const label = roadId.replace(/^(road|bridge|construction|light|sign|tile)-?/, '').replace(/-/g, ' ') || roadId;
+            const previewId = roadId === 'road-square-pro' ? 'road-square' : roadId;
+            item.innerHTML = `<img src="roads/previews/${previewId}.png" onerror="this.src='roads/previews/road-straight.png'"><span>${label}</span>`;
+            item.onclick = () => {
+                if (isDeleteMode) toggleDeleteMode();
+                if (isEditMode) toggleEditMode();
+                if (selectedRoadType === roadId) {
+                    selectedRoadType = null;
+                    item.classList.remove("selected");
+                    if (ghostObject) ghostObject.dispose();
+                    ghostObject = null;
+                } else {
+                    document.querySelectorAll(".road-item").forEach(i => i.classList.remove("selected"));
+                    item.classList.add("selected");
+                    selectedRoadType = roadId;
+                    updateGhost();
+                }
+            };
+            content.appendChild(item);
+        });
+
+        palette.appendChild(header);
+        palette.appendChild(content);
     });
 };
 
@@ -373,7 +588,43 @@ const createScene = () => {
     camera.attachControl(canvas, true);
     camera.lowerRadiusLimit = 5; camera.upperRadiusLimit = 300;
 
-    new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene).intensity = 0.8;
+    // 내장 포인터 입력(좌클릭 회전/우클릭 패닝) 제거 후 직접 구현
+    const _ptrKey = Object.keys(camera.inputs.attached).find(k => camera.inputs.attached[k].buttons);
+    if (_ptrKey) camera.inputs.remove(camera.inputs.attached[_ptrKey]);
+
+    let _rotDrag = false, _rotLx = 0, _rotLy = 0;
+    let _panDrag = false, _panLx = 0, _panLy = 0;
+
+    canvas.addEventListener("pointerdown", e => {
+        if (e.button === 1) { _rotDrag = true; _rotLx = e.clientX; _rotLy = e.clientY; e.preventDefault(); }
+        if (e.button === 2) { _panDrag = true; _panLx = e.clientX; _panLy = e.clientY; }
+    });
+    window.addEventListener("pointerup", e => {
+        if (e.button === 1) _rotDrag = false;
+        if (e.button === 2) _panDrag = false;
+    });
+    canvas.addEventListener("pointermove", e => {
+        if (_rotDrag) {
+            camera.alpha -= (e.clientX - _rotLx) * 0.005;
+            camera.beta = Math.max(0.05, Math.min(1.5, camera.beta - (e.clientY - _rotLy) * 0.005));
+            _rotLx = e.clientX; _rotLy = e.clientY;
+        }
+        if (_panDrag) {
+            const spd = camera.radius * 0.001;
+            const sa = Math.sin(camera.alpha), ca = Math.cos(camera.alpha);
+            const dx = e.clientX - _panLx, dy = e.clientY - _panLy;
+            camera.target.x += sa * dx * spd;
+            camera.target.z -= ca * dx * spd;
+            camera.target.x -= ca * dy * spd;
+            camera.target.z -= sa * dy * spd;
+            _panLx = e.clientX; _panLy = e.clientY;
+        }
+    });
+    canvas.addEventListener("contextmenu", e => e.preventDefault());
+
+    const hemiLight = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+    hemiLight.intensity = 0.8;
+    hemiLight.specular = BABYLON.Color3.Black();
 
     ground = BABYLON.MeshBuilder.CreateGround("ground", { width: 1000, height: 1000 }, scene);
     const grid = new BABYLON.GridMaterial("grid", scene);
@@ -406,6 +657,7 @@ const createScene = () => {
                     if (obj && obj.visualWalls) obj.visualWalls.forEach(w => w.dispose());
                     placedObjects = placedObjects.filter(o => o.mesh !== target);
                     target.dispose();
+                    updateSquareBorders();
                 }
             }
         } else if (isEditMode) {
@@ -497,7 +749,7 @@ const createScene = () => {
     window.addEventListener("keyup", (e) => { if (keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; });
 
     scene.registerBeforeRender(() => {
-        const speed = 1.2;
+        const speed = 0.6;
         const f = camera.getDirection(BABYLON.Vector3.Forward());
         const r = camera.getDirection(BABYLON.Vector3.Right());
         f.y = 0; r.y = 0; f.normalize(); r.normalize();
@@ -513,6 +765,14 @@ const createScene = () => {
 const updateGhost = () => {
     if (ghostObject) ghostObject.dispose();
     if (!selectedRoadType) return;
+
+    if (selectedRoadType === 'road-square-pro') {
+        const { root } = createProceduralSquareMesh(0.4);
+        ghostObject = root;
+        ghostObject.getChildMeshes().forEach(m => m.isPickable = false);
+        return;
+    }
+
     BABYLON.SceneLoader.ImportMesh("", "roads/models/", selectedRoadType + ".glb", scene, (meshes) => {
         ghostObject = new BABYLON.Mesh("ghost", scene);
         meshes.forEach(m => {
@@ -534,6 +794,16 @@ const placeRoad = () => {
     const pos = ghostObject.position.clone();
     const rot = currentRotation;
     const type = selectedRoadType;
+
+    if (type === 'road-square-pro') {
+        const { root, borders, innerExts, innerCornerExts, corners } = createProceduralSquareMesh();
+        root.position.set(pos.x, 0.01, pos.z);
+        root.rotation.y = rot;
+        const dataObj = { type, isSqTile: true, x: pos.x, y: 0.01, z: pos.z, rotation: rot, mesh: root, borders, innerExts, innerCornerExts, corners, walls: [false, false, false, false] };
+        placedObjects.push(dataObj);
+        updateSquareBorders();
+        return;
+    }
 
     BABYLON.SceneLoader.ImportMesh("", "roads/models/", type + ".glb", scene, (meshes) => {
         const newObj = new BABYLON.Mesh("placed", scene);

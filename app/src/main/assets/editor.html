@@ -46,6 +46,15 @@
         }
         
         h2 { font-size: 1.2rem; color: #0ff; margin-top: 0; }
+        .road-group-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 6px 8px; margin-top: 8px;
+            background: #1a1a1a; border: 1px solid #0ff; border-radius: 4px;
+            cursor: pointer; font-size: 0.8rem; color: #0ff; font-weight: bold;
+            user-select: none;
+        }
+        .road-group-header:hover { background: #222; }
+        .road-group-content.collapsed { display: none; }
         .road-item {
             display: flex; align-items: center; padding: 8px; margin-bottom: 5px;
             background: #222; cursor: pointer; border-radius: 5px; border: 1px solid transparent;
